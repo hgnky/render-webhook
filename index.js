@@ -8,8 +8,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Telegram Bot Config
-const BOT_TOKEN = process.env.BOT_TOKEN || '8380090083:AAG3w_W9C-hiPViom1t6JM0nRUDUwRipnzk';
-const CHAT_ID = process.env.CHAT_ID || '-1002777779700';
+const BOT_TOKEN = process.env.BOT_TOKEN || 'YOUR_BOT_TOKEN_HERE';
+const CHAT_ID = process.env.CHAT_ID || 'YOUR_CHAT_ID_HERE';
 
 // Health check endpoint
 app.get('/', (req, res) => {
