@@ -266,62 +266,168 @@ function getSignalEmoji(strength) {
     return '⭐';
 }
 
-// SMART JSON Parser - Handle both object dan string
+// ENHANCED JSON Parser - Handle incomplete dan malformed data
 function parseAlertData(rawData) {
     try {
+        console.log('🔍 Parsing raw data type:', typeof rawData);
+        console.log('📝 Raw data sample:', typeof rawData === 'string' ? rawData.substring(0, 300) + '...' : rawData);
+        
         // Jika sudah object, langsung return
         if (typeof rawData === 'object' && rawData !== null) {
+            console.log('✅ Data already parsed as object');
             return rawData;
         }
         
-        // Jika string, coba parse JSON
+        // Jika string, process lebih careful
         if (typeof rawData === 'string') {
-            // Clean string dulu (remove extra quotes, spaces, etc)
             let cleanData = rawData.trim();
+            console.log('🧹 Cleaning string data...');
             
-            // Cek apakah ini JSON string
+            // Method 1: Cek apakah sudah valid JSON
             if (cleanData.startsWith('{') && cleanData.endsWith('}')) {
-                return JSON.parse(cleanData);
+                try {
+                    const parsed = JSON.parse(cleanData);
+                    console.log('✅ Valid JSON parsed successfully');
+                    return parsed;
+                } catch (e) {
+                    console.log('❌ JSON parse failed despite brackets:', e.message);
+                }
             }
             
-            // Cek apakah ini malformed JSON (tanpa brackets)
-            if (cleanData.includes('"symbol"') && cleanData.includes('"acrdirection"')) {
-                // Add brackets kalau missing
-                if (!cleanData.startsWith('{')) {
-                    cleanData = '{' + cleanData;
-                }
-                if (!cleanData.endsWith('}')) {
-                    cleanData = cleanData + '}';
-                }
-                
-                // Fix common JSON issues
-                cleanData = cleanData.replace(/([{,]\s*)(\w+):/g, '$1"$2":'); // Add quotes to keys
-                cleanData = cleanData.replace(/:\s*([^",{\[\]}\s][^",}\[\]]*)/g, ':"$1"'); // Add quotes to unquoted values
-                cleanData = cleanData.replace(/:"(\d+\.?\d*)"/g, ':$1'); // Remove quotes from numbers
-                cleanData = cleanData.replace(/:"(true|false|null)"/g, ':$1'); // Remove quotes from booleans/null
-                
-                return JSON.parse(cleanData);
+            // Method 2: Fix malformed JSON (missing opening bracket)
+            if (cleanData.startsWith('"') && !cleanData.startsWith('{')) {
+                console.log('🔧 Adding missing opening bracket...');
+                cleanData = '{' + cleanData;
             }
             
-            // Jika bukan JSON, return sebagai plain text indicator
-            return { plain_text: cleanData };
+            // Method 3: Fix incomplete JSON (missing closing bracket)
+            if (!cleanData.endsWith('}')) {
+                console.log('🔧 Adding missing closing bracket...');
+                cleanData = cleanData + '}';
+            }
+            
+            // Method 4: Fix malformed nested objects
+            console.log('🔧 Fixing nested objects...');
+            cleanData = fixNestedObjects(cleanData);
+            
+            // Try parsing fixed JSON
+            try {
+                const parsed = JSON.parse(cleanData);
+                console.log('✅ Fixed JSON parsed successfully');
+                console.log('📊 Parsed keys:', Object.keys(parsed));
+                return parsed;
+            } catch (parseError) {
+                console.log('❌ JSON parse still failed:', parseError.message);
+                console.log('🔍 Problematic data:', cleanData.substring(0, 200));
+                
+                // Method 5: Extract key data manually using regex
+                console.log('🆘 Attempting manual extraction...');
+                return extractDataManually(rawData);
+            }
         }
         
         // Fallback
+        console.log('❌ Unable to parse data type:', typeof rawData);
         return { error: 'Unable to parse data', raw: rawData };
         
     } catch (error) {
-        console.error('Parse error:', error.message);
-        // Return data yang bisa digunakan minimal
-        return { 
-            error: 'Parse failed', 
-            raw: rawData,
-            symbol: 'PARSE_ERROR',
-            acr_direction: 'UNKNOWN'
-        };
+        console.error('💥 Parse error:', error.message);
+        return extractDataManually(rawData);
     }
 }
 
+// Helper function to fix nested objects
+function fixNestedObjects(jsonString) {
+    try {
+        // Fix nested objects like "htfohlc":"open":1.35264,"high":1.35268
+        // Should be "htfohlc":{"open":1.35264,"high":1.35268}
+        
+        let fixed = jsonString;
+        
+        // Pattern untuk nested objects yang rusak
+        const nestedPatterns = [
+            /"(htfohlc|ltfohlc|patterndetails|marketcontext)":"([^"]+)":/g,
+            /"(htfohlc|ltfohlc|patterndetails|marketcontext)":([^}]+)(?=,"[^"]+":)/g
+        ];
+        
+        // Fix pattern "field":"value": menjadi "field":{"value":
+        fixed = fixed.replace(/"(htfohlc|ltfohlc|patterndetails|marketcontext)":"([^"]+)":/g, '"$1":{"$2":');
+        
+        // Add closing brackets untuk nested objects
+        const nestedFields = ['htfohlc', 'ltfohlc', 'patterndetails', 'marketcontext'];
+        for (const field of nestedFields) {
+            const regex = new RegExp(`"${field}":\\{[^}]*(?=,"[^"]+":)`, 'g');
+            fixed = fixed.replace(regex, (match) => match + '}');
+        }
+        
+        console.log('🔧 Nested objects fixed');
+        return fixed;
+        
+    } catch (error) {
+        console.log('❌ Error fixing nested objects:', error.message);
+        return jsonString;
+    }
+}
+
+// Manual data extraction using regex (fallback)
+function extractDataManually(rawData) {
+    console.log('🔍 Manual extraction started...');
+    
+    const extracted = {
+        parsing_method: 'manual_regex'
+    };
+    
+    try {
+        const dataString = rawData.toString();
+        
+        // Extract key fields using regex
+        const extractField = (fieldName, defaultValue = '') => {
+            const regex = new RegExp(`"${fieldName}":(\\d+\\.?\\d*|"[^"]*")`, 'i');
+            const match = dataString.match(regex);
+            if (match) {
+                let value = match[1];
+                // Remove quotes if string
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    value = value.slice(1, -1);
+                }
+                return value;
+            }
+            return defaultValue;
+        };
+        
+        // Extract semua field yang dibutuhkan
+        extracted.symbol = extractField('symbol', 'UNKNOWN');
+        extracted.alerttype = extractField('alerttype', 'HTFACRSWEEP');
+        extracted.currentltfprice = parseFloat(extractField('currentltfprice', '0')) || 0;
+        extracted.ltftimeframe = extractField('ltftimeframe', '1');
+        extracted.htftimeframe = extractField('htftimeframe', '15');
+        extracted.htfbartime = parseInt(extractField('htfbartime', Date.now().toString())) || Date.now();
+        extracted.acrdirection = extractField('acrdirection', 'NEUTRAL');
+        extracted.sweeplevel = parseFloat(extractField('sweeplevel', '0')) || 0;
+        extracted.cisdstatus = extractField('cisdstatus', 'NEUTRAL');
+        extracted.cisddirection = extractField('cisddirection', '');
+        extracted.acrxsignals = extractField('acrxsignals', '');
+        extracted.htfchangepct = parseFloat(extractField('htfchangepct', '0')) || 0;
+        extracted.htfvolume = parseFloat(extractField('htfvolume', '0')) || 0;
+        
+        console.log('✅ Manual extraction completed:', {
+            symbol: extracted.symbol,
+            direction: extracted.acrdirection,
+            price: extracted.currentltfprice
+        });
+        
+        return extracted;
+        
+    } catch (error) {
+        console.error('❌ Manual extraction failed:', error.message);
+        return { 
+            error: 'Manual extraction failed', 
+            raw: rawData,
+            symbol: 'EXTRACT_ERROR',
+            acrdirection: 'UNKNOWN'
+        };
+    }
+}
 // Data Mapper - Convert dari Pine Script naming ke internal naming
 function mapAlertData(parsedData) {
     // Map field names dari Pine Script ke format internal
