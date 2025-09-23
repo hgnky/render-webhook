@@ -42,7 +42,7 @@ const tradingTips = [
     "CE zones are premium areas untuk high-probability setups 💎",
     "FVG mitigation memberikan clue untuk market direction 🔍",
     "ACR+ expansion menandakan momentum yang kuat 🚀",
-    "Reversal + Market Structure = powerful combination 🔄"
+    "Reversal + Market Structure = powerful combination 🔄",
     "HTF bias menentukan arah, LTF untuk timing entry presisi 🎯",
     "ACR sweep adalah invitation untuk institutional money flow 💰", 
 
