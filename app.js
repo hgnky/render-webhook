@@ -280,141 +280,150 @@ function getSignalEmoji(strength) {
     return '⭐';
 }
 
-// Enhanced message formatter for new data structure
+// Enhanced message formatter with Markdown escape
 function formatMessage(data) {
     try {
         const {
-            symbol = 'UNKNOWN',
-            alert_type = 'ACR_ALERT',
-            current_ltf_price = '0.00000',
-            ltf_timeframe = '15',
-            htf_timeframe = '1H',
+            symbol = 'Unknown',
+            current_price = '0.00000',
+            timeframe = '15',
+            htf = '1H',
             acr_direction = 'NEUTRAL',
             sweep_level = '0.00000',
             cisd_status = 'NEUTRAL',
-            cisd_direction = 'NONE',
             acrx_signals = '',
-            htf_change_pct = '0',
-            htf_volume = '0',
-            htf_ohlc = {},
-            ltf_ohlc = {},
-            pattern_details = {},
-            market_context = {}
+            alert_time_wib = 'Unknown',
+            market_session = '🌙 Unknown Session',
+            price_change_1h = '0',
+            random_tip = 'Always manage your risk!',
+            volume = '0'
         } = data;
 
+        // Escape function untuk Markdown
+        const escapeMarkdown = (text) => {
+            if (!text || typeof text !== 'string') return text;
+            return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
+        };
+
+        // Clean data (remove special chars yang bermasalah)
+        const cleanSymbol = escapeMarkdown(symbol.toString());
+        const cleanPrice = current_price.toString().replace(/[^0-9.]/g, '');
+        const cleanSweep = sweep_level.toString().replace(/[^0-9.]/g, '');
+        const cleanCISD = escapeMarkdown(cisd_status.toString());
+        const cleanACRX = escapeMarkdown(acrx_signals.toString());
+        const cleanTip = escapeMarkdown(random_tip.toString());
+
         // Direction styling
-        const isBullish = acr_direction === 'BULLISH';
-        const isBearish = acr_direction === 'BEARISH';
-        const directionEmoji = isBullish ? '🟢' : isBearish ? '🔴' : '⚪';
-        const trendArrow = isBullish ? '📈' : isBearish ? '📉' : '➖';
-        const setupIcon = isBullish ? '🚀' : isBearish ? '🎯' : '🔄';
+        const isbullish = acr_direction === 'BULLISH';
+        const isbearish = acr_direction === 'BEARISH';
+        const directionEmoji = isbullish ? '🟢' : isbearish ? '🔴' : '⚪';
+        const trendArrow = isbullish ? '📈' : isbearish ? '📉' : '➖';
+        const setupIcon = isbullish ? '🚀' : isbearish ? '🎯' : '🔄';
         
-        // Price change formatting
-        const htfChange = parseFloat(htf_change_pct) || 0;
-        const changeEmoji = htfChange > 0 ? '📈' : htfChange < 0 ? '📉' : '➖';
-        const changeSign = htfChange > 0 ? '+' : '';
+        // Price change formatting (safe)
+        const priceChange = parseFloat(price_change_1h) || 0;
+        const changeEmoji = priceChange > 0 ? '📈' : priceChange < 0 ? '📉' : '➖';
+        const changeSign = priceChange > 0 ? '+' : '';
+        const changePercent = Math.abs(priceChange).toFixed(2);
         
         // CISD status formatting
         const cisdEmoji = cisd_status.includes('BULLISH') ? '🟢' : 
                           cisd_status.includes('BEARISH') ? '🔴' : '⚪';
 
-        // Calculate signal strength
-        const signalData = calculateSignalStrength(data);
-        const strengthEmoji = getSignalEmoji(signalData.strength);
+        // Volume formatting (safe)
+        let volText = '';
+        if (volume && volume !== '0') {
+            const vol = parseFloat(volume);
+            if (!isNaN(vol) && vol > 0) {
+                if (vol > 1000000) {
+                    volText = `📊 *Volume:* ${(vol/1000000).toFixed(1)}M\n`;
+                } else if (vol > 1000) {
+                    volText = `📊 *Volume:* ${(vol/1000).toFixed(1)}K\n`;
+                } else {
+                    volText = `📊 *Volume:* ${vol.toFixed(0)}\n`;
+                }
+            }
+        }
 
-        // Build professional message
-        let message = `${strengthEmoji} *AUDENFX HTF ALERT* ${strengthEmoji}\n\n`;
+        // Build message dengan safe formatting
+        let message = `🚨 *AUDENFX SIGNAL ALERT* 🚨\n\n`;
         
-        // Header Info
-        message += `${setupIcon} *${symbol}* | ${formatTimeframe(ltf_timeframe)} → ${formatTimeframe(htf_timeframe)}\n`;
-        message += `${directionEmoji} *${acr_direction} ACR SWEEP* ${trendArrow}\n`;
-        message += `🎖️ *Signal Strength:* ${signalData.strength}%\n`;
+        // Header Info (safe)
+        message += `${setupIcon} *${cleanSymbol}* \\| ${formatTimeframe(timeframe)} → ${formatTimeframe(htf)}\n`;
+        message += `${directionEmoji} *${acr_direction} ACR* ${trendArrow}\n`;
         message += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
         
-        // Price Information
-        message += `💰 *LTF Price:* \`${current_ltf_price}\`\n`;
+        // Trading Info (safe)
+        message += `💰 *Current Price:* \`${cleanPrice}\`\n`;
+        message += `🎯 *Sweep Level:* \`${cleanSweep}\`\n`;
+        message += `${changeEmoji} *1H Change:* ${changeSign}${changePercent}%\n`;
         
-        // HTF OHLC if available
-        if (htf_ohlc && htf_ohlc.close) {
-            message += `📊 *HTF Close:* \`${htf_ohlc.close}\`\n`;
-            message += `📈 *HTF High:* \`${htf_ohlc.high}\` | 📉 *Low:* \`${htf_ohlc.low}\`\n`;
-        }
-        
-        message += `🎯 *Sweep Level:* \`${sweep_level}\`\n`;
-        message += `${changeEmoji} *HTF Change:* ${changeSign}${htfChange.toFixed(2)}%\n`;
-        
-        // Volume info
-        if (htf_volume && htf_volume !== '0') {
-            message += `📊 *HTF Volume:* ${formatVolume(htf_volume)}\n`;
+        // Volume (if available)
+        if (volText) {
+            message += volText;
         }
         message += `\n`;
         
-        // Signal Analysis
-        message += `${cisdEmoji} *CISD:* ${cisd_status}\n`;
-        if (cisd_direction && cisd_direction !== 'NONE') {
-            message += `🎲 *CISD Direction:* ${cisd_direction}\n`;
-        }
-        
-        if (acrx_signals && acrx_signals !== '') {
-            message += `⚡ *ACR+ Signals:* ${acrx_signals}\n`;
-        }
-        
-        // Signal Strength Factors
-        if (signalData.factors.length > 0) {
-            message += `🎯 *Confluence:* ${signalData.factors.join(' • ')}\n`;
+        // Signal Status (safe)
+        message += `${cisdEmoji} *CISD:* ${cleanCISD}\n`;
+        if (cleanACRX && cleanACRX !== '') {
+            message += `⚡ *ACR\\+:* ${cleanACRX}\n`;
         }
         message += `\n`;
         
-        // Market Context
-        if (market_context.rsi) {
-            const rsi = parseFloat(market_context.rsi);
-            const rsiStatus = rsi > 70 ? 'Overbought 🔴' : rsi < 30 ? 'Oversold 🟢' : 'Neutral ⚪';
-            message += `📊 *RSI:* ${rsi.toFixed(1)} (${rsiStatus})\n`;
-        }
+        // Session & Time Info (safe)
+        message += `${market_session}\n`;
+        message += `🕐 *Alert Time:* ${alert_time_wib}\n\n`;
         
-        if (market_context.current_atr) {
-            message += `📏 *ATR:* ${parseFloat(market_context.current_atr).toFixed(5)}\n`;
-        }
+        // Trading Tip (safe)
+        message += `💡 *Kata-Kata Hari Ini King:*\n`;
+        message += `_"${cleanTip}"_\n\n`;
         
-        // Market Analysis
-        const analysis = getMarketAnalysis(acr_direction, acrx_signals);
-        message += `\n🔮 *Analysis:* ${analysis}\n`;
-        
-        // Session & Time Info
-        message += `\n${getMarketSession()}\n`;
-        message += `🕐 *Alert Time:* ${moment().tz('Asia/Jakarta').format('DD/MM HH:mm:ss')} WIB\n`;
-        
-        // Pattern Details (if available)
-        if (pattern_details.c1_high || pattern_details.c2_high) {
-            message += `\n📐 *Pattern Details:*\n`;
-            if (pattern_details.c1_high) {
-                message += `• C1: H=${parseFloat(pattern_details.c1_high).toFixed(5)} L=${parseFloat(pattern_details.c1_low).toFixed(5)}\n`;
-            }
-            if (pattern_details.c2_high) {
-                message += `• C2: H=${parseFloat(pattern_details.c2_high).toFixed(5)} L=${parseFloat(pattern_details.c2_low).toFixed(5)}\n`;
-            }
-        }
-        
-        // Trading Tip
-        message += `\n💡 *Pilih Margin Call atau kasih kata-kata? Kata-kata hari ini king:*\n`;
-        message += `_"${getRandomTip()}"_\n\n`;
-        
-        // Footer
+        // Footer (safe)
         message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
         message += `⚠️ *Risk Management is Key*\n`;
         message += `📊 *Always DYOR • NFA*\n`;
-        message += `🏷️ \`#AudenFX #${symbol} #HTF${acr_direction}\``;
+        message += `🏷️ \`\\#AudenFX \\#${cleanSymbol} \\#${acr_direction}ACR\``;
 
         return message;
         
     } catch (error) {
         console.error('Format message error:', error);
-        // Enhanced fallback message
-        const fallbackData = extractBasicData(data);
-        return `🚨 *AudenFX HTF Alert*\n\n📊 Symbol: ${fallbackData.symbol}\n🎯 Direction: ${fallbackData.direction}\n💰 Price: ${fallbackData.price}\n⏰ Time: ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}\n\n⚠️ _Enhanced processing - check logs_`;
+        // Fallback ke plain text (no markdown)
+        return formatPlainMessage(data);
     }
 }
 
+// Fallback plain text formatter (no markdown)
+function formatPlainMessage(data) {
+    const {
+        symbol = 'Unknown',
+        current_price = '0.00000',
+        acr_direction = 'NEUTRAL',
+        sweep_level = '0.00000',
+        cisd_status = 'NEUTRAL',
+        acrx_signals = ''
+    } = data;
+
+    const directionEmoji = acr_direction === 'BULLISH' ? '🟢' : 
+                          acr_direction === 'BEARISH' ? '🔴' : '⚪';
+    
+    let message = `🚨 AUDENFX SIGNAL ALERT 🚨\n\n`;
+    message += `${directionEmoji} ${symbol} - ${acr_direction} ACR\n`;
+    message += `💰 Current Price: ${current_price}\n`;
+    message += `🎯 Sweep Level: ${sweep_level}\n`;
+    message += `🔥 CISD: ${cisd_status}\n`;
+    
+    if (acrx_signals && acrx_signals !== '') {
+        message += `⚡ ACR+: ${acrx_signals}\n`;
+    }
+    
+    message += `\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}`;
+    message += `\n${getMarketSession()}`;
+    message += `\n\n⚠️ Risk Management is Key | Always DYOR`;
+    
+    return message;
+}
 // Helper function to extract basic data from complex structure
 function extractBasicData(data) {
     return {
