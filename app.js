@@ -396,7 +396,7 @@ function formatMessage(data) {
         }
         
         // Trading Tip
-        message += `\n💡 *Kata-kata Hari King:*\n`;
+        message += `\n💡 *Kata-kata hari ini nya king:*\n`;
         message += `_"${getRandomTip()}"_\n\n`;
         
         // Footer
