@@ -396,7 +396,7 @@ function formatMessage(data) {
         }
         
         // Trading Tip
-        message += `\n💡 *Pilih Margin Call atau kata-kata hari? Kata-kata hari ini king : *\n`;
+        message += `\n💡 *Pilih Margin Call atau kasih ata? Kata-kata hari ini king : *\n`;
         message += `_"${getRandomTip()}"_\n\n`;
         
         // Footer
