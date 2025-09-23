@@ -276,7 +276,7 @@ function extractBasicData(data) {
     };
 }
 
-// SAFE Plain Text Message Formatter (NO MARKDOWN/HTML)
+// FIXED: Proper newline formatting for Telegram
 function formatMessage(data) {
     try {
         const {
@@ -288,109 +288,131 @@ function formatMessage(data) {
             sweep_level = '0.00000',
             cisd_status = 'NEUTRAL',
             acrx_signals = '',
-            alert_time_wib = moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
-            market_session = getMarketSession(),
             price_change_1h = '0',
-            random_tip = getRandomTip(),
             volume = '0'
         } = data;
 
-        // Clean all data (remove special characters that might cause issues)
-        const cleanSymbol = symbol.toString().replace(/[^\w]/g, '');
-        const cleanPrice = current_price.toString().replace(/[^0-9.]/g, '');
-        const cleanSweep = sweep_level.toString().replace(/[^0-9.]/g, '');
-        const cleanCISD = cisd_status.toString();
-        const cleanACRX = acrx_signals.toString();
-        const cleanTip = random_tip.toString().replace(/["""'']/g, '"');
-
-        // Direction styling (emoji only)
+        // Clean data dengan proper handling
+        const cleanSymbol = (symbol || 'UNKNOWN').toString().replace(/[^\w]/g, '');
+        const cleanPrice = (current_price || '0.00000').toString().replace(/[^0-9.]/g, '');
+        const cleanSweep = (sweep_level || '0.00000').toString().replace(/[^0-9.]/g, '');
+        const cleanCISD = (cisd_status || 'NEUTRAL').toString();
+        const cleanACRX = (acrx_signals || '').toString();
+        
+        // Get fresh data
+        const currentTime = moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss');
+        const marketSession = getMarketSession();
+        const randomTip = getRandomTip();
+        
+        // Direction styling
         const isbullish = acr_direction === 'BULLISH';
         const isbearish = acr_direction === 'BEARISH';
         const directionEmoji = isbullish ? '🟢' : isbearish ? '🔴' : '⚪';
         const trendArrow = isbullish ? '📈' : isbearish ? '📉' : '➖';
         const setupIcon = isbullish ? '🚀' : isbearish ? '🎯' : '🔄';
         
-        // Price change formatting
+        // Price change
         const priceChange = parseFloat(price_change_1h) || 0;
         const changeEmoji = priceChange > 0 ? '📈' : priceChange < 0 ? '📉' : '➖';
         const changeSign = priceChange > 0 ? '+' : '';
         
         // CISD emoji
-        const cisdEmoji = cisd_status.includes('BULLISH') ? '🟢' : 
-                          cisd_status.includes('BEARISH') ? '🔴' : '⚪';
-
-        // Volume formatting
-        let volText = '';
-        if (volume && volume !== '0') {
-            const vol = parseFloat(volume);
-            if (!isNaN(vol) && vol > 0) {
-                if (vol > 1000000) {
-                    volText = `📊 Volume: ${(vol/1000000).toFixed(1)}M\n`;
-                } else if (vol > 1000) {
-                    volText = `📊 Volume: ${(vol/1000).toFixed(1)}K\n`;
-                } else {
-                    volText = `📊 Volume: ${vol.toFixed(0)}\n`;
-                }
-            }
-        }
+        const cisdEmoji = cleanCISD.includes('BULLISH') ? '🟢' : 
+                          cleanCISD.includes('BEARISH') ? '🔴' : '⚪';
 
         // Signal strength
         const signalData = calculateSignalStrength(data);
         const strengthEmoji = getSignalEmoji(signalData.strength);
 
-        // Build PLAIN TEXT message (no markdown formatting)
-        let message = `🚨 AUDENFX SIGNAL ALERT 🚨\n\n`;
-        
-        // Header Info
-        message += `${setupIcon} ${cleanSymbol} | ${formatTimeframe(timeframe)} → ${formatTimeframe(htf)}\n`;
-        message += `${directionEmoji} ${acr_direction} ACR ${trendArrow}\n`;
-        message += `${strengthEmoji} Signal Strength: ${signalData.strength}%\n`;
-        message += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-        
-        // Trading Info
-        message += `💰 Current Price: ${cleanPrice}\n`;
-        message += `🎯 Sweep Level: ${cleanSweep}\n`;
-        message += `${changeEmoji} 1H Change: ${changeSign}${Math.abs(priceChange).toFixed(2)}%\n`;
-        
-        // Volume
-        if (volText) {
-            message += volText;
+        // Volume formatting
+        let volumeText = '';
+        if (volume && volume !== '0') {
+            const vol = parseFloat(volume);
+            if (!isNaN(vol) && vol > 0) {
+                if (vol > 1000000) {
+                    volumeText = `📊 Volume: ${(vol/1000000).toFixed(1)}M`;
+                } else if (vol > 1000) {
+                    volumeText = `📊 Volume: ${(vol/1000).toFixed(1)}K`;
+                } else {
+                    volumeText = `📊 Volume: ${vol.toFixed(0)}`;
+                }
+            }
         }
-        message += `\n`;
-        
-        // Signal Status
-        message += `${cisdEmoji} CISD: ${cleanCISD}\n`;
-        if (cleanACRX && cleanACRX !== '') {
-            message += `⚡ ACR+: ${cleanACRX}\n`;
-        }
-        
-        // Market Analysis
-        const analysis = getMarketAnalysis(acr_direction, cleanACRX);
-        message += `📊 Analysis: ${analysis}\n\n`;
-        
-        // Session & Time
-        message += `${market_session}\n`;
-        message += `🕐 Alert Time: ${alert_time_wib}\n\n`;
-        
-        // Trading Tip
-        message += `💡 Kata-Kata Hari Ini King:\n`;
-        message += `"${cleanTip}"\n\n`;
-        
-        // Footer
-        message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-        message += `⚠️ Risk Management is Key\n`;
-        message += `📊 Always DYOR • NFA\n`;
-        message += `#AudenFX #${cleanSymbol} #${acr_direction}ACR`;
 
-        return message;
+        // Market analysis
+        const analysis = getMarketAnalysis(acr_direction, cleanACRX);
+
+        // BUILD MESSAGE dengan explicit line breaks
+        const lines = [
+            '🚨 AUDENFX SIGNAL ALERT 🚨',
+            '',
+            `${setupIcon} ${cleanSymbol} | ${formatTimeframe(timeframe)} → ${formatTimeframe(htf)}`,
+            `${directionEmoji} ${acr_direction} ACR ${trendArrow}`,
+            `${strengthEmoji} Signal Strength: ${signalData.strength}%`,
+            '━━━━━━━━━━━━━━━━━━━━━━',
+            '',
+            `💰 Current Price: ${cleanPrice}`,
+            `🎯 Sweep Level: ${cleanSweep}`,
+            `${changeEmoji} 1H Change: ${changeSign}${Math.abs(priceChange).toFixed(2)}%`
+        ];
+
+        // Add volume if available
+        if (volumeText) {
+            lines.push(volumeText);
+        }
+        
+        lines.push('');
+
+        // Signal info
+        lines.push(`${cisdEmoji} CISD: ${cleanCISD}`);
+        if (cleanACRX && cleanACRX !== '') {
+            lines.push(`⚡ ACR+: ${cleanACRX}`);
+        }
+        lines.push(`📊 Analysis: ${analysis}`);
+        lines.push('');
+
+        // Session & Time
+        lines.push(marketSession);
+        lines.push(`🕐 Alert Time: ${currentTime} WIB`);
+        lines.push('');
+
+        // Tip
+        lines.push('💡 Kata-Kata Hari Ini King:');
+        lines.push(`"${randomTip}"`);
+        lines.push('');
+
+        // Footer
+        lines.push('━━━━━━━━━━━━━━━━━━━━━━');
+        lines.push('⚠️ Risk Management is Key');
+        lines.push('📊 Always DYOR • NFA');
+        lines.push(`#AudenFX #${cleanSymbol} #${acr_direction}ACR`);
+
+        // Join dengan newline yang benar
+        const finalMessage = lines.join('\n');
+        
+        console.log('📝 Message formatted with', lines.length, 'lines');
+        return finalMessage;
         
     } catch (error) {
         console.error('Format message error:', error);
-        // Ultra-safe fallback
-        return `🚨 AUDENFX ALERT\n\n📊 ${data.symbol || 'Unknown'}\n🎯 ${data.acr_direction || 'Unknown'} ACR\n💰 Price: ${data.current_price || '0'}\n🎯 Sweep: ${data.sweep_level || '0'}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}\n\n⚠️ Always DYOR - NFA`;
+        
+        // Ultra-safe fallback dengan explicit newlines
+        const fallbackLines = [
+            '🚨 AUDENFX ALERT',
+            '',
+            `📊 ${data.symbol || 'Unknown'}`,
+            `🎯 ${data.acr_direction || 'Unknown'} ACR`,
+            `💰 Price: ${data.current_price || '0'}`,
+            `🎯 Sweep: ${data.sweep_level || '0'}`,
+            '',
+            `⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')} WIB`,
+            '',
+            '⚠️ Always DYOR - NFA'
+        ];
+        
+        return fallbackLines.join('\n');
     }
 }
-
 // Enhanced validation function
 async function validateBotCredentials() {
     if (!BOT_TOKEN || !CHAT_ID) {
@@ -434,65 +456,49 @@ async function validateBotCredentials() {
     }
 }
 
-// ULTRA-SAFE Telegram sender (Plain Text Only)
+// FIXED: sendToTelegram dengan proper newline handling
 async function sendToTelegram(message, retries = 2) {
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
     
-    // Clean message dari semua karakter yang bermasalah
+    // Clean message tapi preserve newlines
     let cleanMessage = message.toString();
     
-    // Remove semua markdown/html characters yang bisa bikin parsing error
+    // Remove hanya karakter berbahaya, KEEP newlines
     cleanMessage = cleanMessage.replace(/[*_`\[\]()~>#+=|{}!\\]/g, '');
     
-    // Replace multiple spaces dengan single space
-    cleanMessage = cleanMessage.replace(/\s+/g, ' ').trim();
+    // Ensure proper newlines (convert any weird line breaks to \n)
+    cleanMessage = cleanMessage.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     
-    // Limit message length (Telegram max 4096 chars)
+    // Remove excessive whitespace tapi preserve line structure
+    cleanMessage = cleanMessage.replace(/[ \t]+/g, ' '); // multiple spaces/tabs to single space
+    cleanMessage = cleanMessage.replace(/\n{3,}/g, '\n\n'); // max 2 consecutive newlines
+    cleanMessage = cleanMessage.trim();
+    
+    // Length check
     if (cleanMessage.length > 4000) {
         cleanMessage = cleanMessage.substring(0, 4000) + '...\n\n⚠️ Message truncated';
     }
 
     for (let i = 0; i < retries; i++) {
         try {
-            console.log(`📤 Sending PLAIN TEXT to Telegram (attempt ${i + 1}/${retries})`);
+            console.log(`📤 Sending message to Telegram (attempt ${i + 1}/${retries})`);
+            console.log(`📏 Message length: ${cleanMessage.length} chars, ${cleanMessage.split('\n').length} lines`);
             
             const response = await axios.post(url, {
                 chat_id: CHAT_ID,
                 text: cleanMessage,
                 disable_web_page_preview: true
-                // NO parse_mode = plain text only, no formatting
             }, {
                 timeout: 20000,
                 headers: { 'Content-Type': 'application/json' }
             });
             
-            console.log('✅ Plain text message sent successfully');
+            console.log('✅ Message sent with proper formatting');
             return { ok: true, data: response.data };
             
         } catch (error) {
             const errorDetails = error.response?.data || error.message;
             console.error(`❌ Telegram error (attempt ${i + 1}):`, errorDetails);
-            
-            // If still parsing error, send ultra-minimal message
-            if (errorDetails && errorDetails.description && errorDetails.description.includes("parse entities") && i === retries - 1) {
-                console.log('🆘 Sending ultra-minimal message...');
-                
-                try {
-                    const basicData = extractBasicData({ symbol: 'Alert', acr_direction: 'Signal', current_price: 'Active' });
-                    const minimalMessage = `🚨 AudenFX Alert\n\nSymbol: ${basicData.symbol}\nDirection: ${basicData.direction}\nPrice: ${basicData.price}\n\nTime: ${moment().tz('Asia/Jakarta').format('HH:mm DD/MM/YYYY')}`;
-                    
-                    const minimalResponse = await axios.post(url, {
-                        chat_id: CHAT_ID,
-                        text: minimalMessage
-                    }, { timeout: 10000 });
-                    
-                    console.log('✅ Minimal message sent');
-                    return { ok: true, data: minimalResponse.data };
-                    
-                } catch (minimalError) {
-                    console.error('❌ Even minimal message failed:', minimalError.response?.data);
-                }
-            }
             
             if (i === retries - 1) {
                 return { 
@@ -502,12 +508,10 @@ async function sendToTelegram(message, retries = 2) {
                 };
             }
             
-            // Wait before retry
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
 }
-
 // =================== ROUTES ===================
 
 // Health check
