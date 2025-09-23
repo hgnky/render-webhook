@@ -214,43 +214,76 @@ function getMarketSession() {
     }
 }
 
+// Enhanced signal strength sesuai Pine Script
 function calculateSignalStrength(data) {
     let strength = 0;
     let factors = [];
     
-    // ACR Direction (base)
+    // ACR Direction (base strength)
     if (data.acr_direction && data.acr_direction !== 'NEUTRAL') {
-        strength += 30;
+        strength += 25;
         factors.push('ACR Pattern');
     }
     
-    // CISD Confirmation
+    // CISD Status
     if (data.cisd_status && data.cisd_status.includes('CISD')) {
-        strength += 25;
+        strength += 20;
         factors.push('CISD Confirmed');
+        
+        // Extra for CISD direction
+        if (data.cisd_direction && data.cisd_direction.includes('SETUP')) {
+            strength += 10;
+            factors.push('CISD Setup');
+        }
     }
     
-    // ACRX Signals
+    // ACRX Signals (sesuai Pine Script)
     if (data.acrx_signals) {
         if (data.acrx_signals.includes('CISD')) {
-            strength += 20;
+            strength += 15;
             factors.push('ACR+ CISD');
         }
         if (data.acrx_signals.includes('EXP')) {
-            strength += 15;
-            factors.push('Expansion');
+            strength += 10;
+            factors.push('ACR+ Expansion');
         }
         if (data.acrx_signals.includes('REV')) {
-            strength += 10;
-            factors.push('Reversal');
+            strength += 8;
+            factors.push('ACR+ Reversal');
         }
     }
     
-    // Price momentum
-    const priceChange = parseFloat(data.htf_change_pct) || parseFloat(data.price_change_1h) || 0;
-    if (Math.abs(priceChange) > 0.5) {
-        strength += 10;
+    // HTF momentum
+    const htfChange = parseFloat(data.htf_change_pct) || 0;
+    if (Math.abs(htfChange) > 0.3) {
+        strength += 7;
         factors.push('HTF Momentum');
+    }
+    
+    // Pattern validation
+    if (data.pattern_details && data.pattern_details.pattern_id > 0) {
+        strength += 5;
+        factors.push('Pattern ID');
+    }
+    
+    // Volume confirmation
+    if (parseFloat(data.htf_volume) > 1000) {
+        strength += 5;
+        factors.push('Volume');
+    }
+    
+    // Market context (ATR, RSI)
+    if (data.market_context) {
+        if (data.market_context.current_atr > 0) {
+            strength += 3;
+            factors.push('ATR Context');
+        }
+        const rsi = data.market_context.rsi || 50;
+        if ((data.acr_direction === 'BULLISH' && rsi < 70) || 
+            (data.acr_direction === 'BEARISH' && rsi > 30)) {
+            strength += 5;
+            factors.push('RSI Alignment');
+        }
     }
     
     return {
@@ -258,14 +291,6 @@ function calculateSignalStrength(data) {
         factors: factors
     };
 }
-
-function getSignalEmoji(strength) {
-    if (strength >= 80) return '🔥';
-    if (strength >= 60) return '⚡';
-    if (strength >= 40) return '💫';
-    return '⭐';
-}
-
 // ENHANCED JSON Parser - Handle incomplete dan malformed data
 function parseAlertData(rawData) {
     try {
@@ -369,7 +394,86 @@ function fixNestedObjects(jsonString) {
     }
 }
 
-// Manual data extraction using regex (fallback)
+
+// ENHANCED Data Mapper - sesuai dengan Pine Script naming
+function mapAlertData(parsedData) {
+    const mapped = {
+        symbol: parsedData.symbol || 'UNKNOWN',
+        alert_type: parsedData.alert_type || 'HTF_ACR_SWEEP',
+        
+        // Current TF price data (sesuai Pine Script)
+        current_ltf_price: parsedData.current_ltf_price || '0.00000',
+        ltf_timeframe: parsedData.ltf_timeframe || '1',
+        
+        // HTF data (sesuai Pine Script)
+        htf_timeframe: parsedData.htf_timeframe || '15',
+        htf_bar_time: parsedData.htf_bar_time || Date.now(),
+        
+        // ACR Pattern data (sesuai Pine Script)
+        acr_direction: parsedData.acr_direction || 'NEUTRAL',
+        sweep_level: parsedData.sweep_level || '0.00000',
+        
+        // CISD data (sesuai Pine Script)
+        cisd_status: parsedData.cisd_status || 'NEUTRAL',
+        cisd_direction: parsedData.cisd_direction || 'NONE',
+        
+        // ACRX signals (sesuai Pine Script)
+        acrx_signals: parsedData.acrx_signals || '',
+        
+        // HTF change percentage
+        htf_change_pct: parsedData.htf_change_pct || 0,
+        
+        // HTF volume
+        htf_volume: parsedData.htf_volume || 0,
+        
+        // OHLC data (sesuai Pine Script)
+        htf_ohlc: {
+            open: parsedData.htf_ohlc?.open || 0,
+            high: parsedData.htf_ohlc?.high || 0,
+            low: parsedData.htf_ohlc?.low || 0,
+            close: parsedData.htf_ohlc?.close || 0
+        },
+        
+        ltf_ohlc: {
+            open: parsedData.ltf_ohlc?.open || 0,
+            high: parsedData.ltf_ohlc?.high || 0,
+            low: parsedData.ltf_ohlc?.low || 0,
+            close: parsedData.ltf_ohlc?.close || 0
+        },
+        
+        // Pattern details (sesuai Pine Script)
+        pattern_details: {
+            c1_high: parsedData.pattern_details?.c1_high || 0,
+            c1_low: parsedData.pattern_details?.c1_low || 0,
+            c2_high: parsedData.pattern_details?.c2_high || 0,
+            c2_low: parsedData.pattern_details?.c2_low || 0,
+            is_high_sweep: parsedData.pattern_details?.is_high_sweep || false,
+            pattern_id: parsedData.pattern_details?.pattern_id || 0
+        },
+        
+        // Market context (sesuai Pine Script)
+        market_context: {
+            current_atr: parsedData.market_context?.current_atr || 0,
+            rsi: parsedData.market_context?.rsi || 50,
+            timestamp: parsedData.market_context?.timestamp || Date.now()
+        },
+        
+        // Keep original for debug
+        _original: parsedData
+    };
+    
+    console.log('📊 Data mapped successfully:', {
+        symbol: mapped.symbol,
+        direction: mapped.acr_direction,
+        price: mapped.current_ltf_price,
+        htf: mapped.htf_timeframe
+    });
+    
+    return mapped;
+}
+
+
+// Enhanced manual extraction sesuai Pine Script output
 function extractDataManually(rawData) {
     console.log('🔍 Manual extraction started...');
     
@@ -380,9 +484,9 @@ function extractDataManually(rawData) {
     try {
         const dataString = rawData.toString();
         
-        // Extract key fields using regex
+        // Extract dengan field names yang tepat sesuai Pine Script
         const extractField = (fieldName, defaultValue = '') => {
-            const regex = new RegExp(`"${fieldName}":(\\d+\\.?\\d*|"[^"]*")`, 'i');
+            const regex = new RegExp(`"${fieldName}":(\\d+\\.?\\d*|"[^"]*"|true|false)`, 'i');
             const match = dataString.match(regex);
             if (match) {
                 let value = match[1];
@@ -390,30 +494,58 @@ function extractDataManually(rawData) {
                 if (value.startsWith('"') && value.endsWith('"')) {
                     value = value.slice(1, -1);
                 }
+                // Convert boolean strings
+                if (value === 'true') return true;
+                if (value === 'false') return false;
                 return value;
             }
             return defaultValue;
         };
         
-        // Extract semua field yang dibutuhkan
+        // Extract semua field sesuai Pine Script buildHTFAlertData()
         extracted.symbol = extractField('symbol', 'UNKNOWN');
-        extracted.alerttype = extractField('alerttype', 'HTFACRSWEEP');
-        extracted.currentltfprice = parseFloat(extractField('currentltfprice', '0')) || 0;
-        extracted.ltftimeframe = extractField('ltftimeframe', '1');
-        extracted.htftimeframe = extractField('htftimeframe', '15');
-        extracted.htfbartime = parseInt(extractField('htfbartime', Date.now().toString())) || Date.now();
-        extracted.acrdirection = extractField('acrdirection', 'NEUTRAL');
-        extracted.sweeplevel = parseFloat(extractField('sweeplevel', '0')) || 0;
-        extracted.cisdstatus = extractField('cisdstatus', 'NEUTRAL');
-        extracted.cisddirection = extractField('cisddirection', '');
-        extracted.acrxsignals = extractField('acrxsignals', '');
-        extracted.htfchangepct = parseFloat(extractField('htfchangepct', '0')) || 0;
-        extracted.htfvolume = parseFloat(extractField('htfvolume', '0')) || 0;
+        extracted.alert_type = extractField('alert_type', 'HTF_ACR_SWEEP');
+        extracted.current_ltf_price = parseFloat(extractField('current_ltf_price', '0')) || 0;
+        extracted.ltf_timeframe = extractField('ltf_timeframe', '1');
+        extracted.htf_timeframe = extractField('htf_timeframe', '15');
+        extracted.htf_bar_time = parseInt(extractField('htf_bar_time', Date.now().toString())) || Date.now();
+        extracted.acr_direction = extractField('acr_direction', 'NEUTRAL');
+        extracted.sweep_level = parseFloat(extractField('sweep_level', '0')) || 0;
+        extracted.cisd_status = extractField('cisd_status', 'NEUTRAL');
+        extracted.cisd_direction = extractField('cisd_direction', 'NONE');
+        extracted.acrx_signals = extractField('acrx_signals', '');
+        extracted.htf_change_pct = parseFloat(extractField('htf_change_pct', '0')) || 0;
+        extracted.htf_volume = parseFloat(extractField('htf_volume', '0')) || 0;
+        
+        // Extract nested OHLC data
+        extracted.htf_ohlc = {
+            open: parseFloat(extractField('open', '0')) || 0,
+            high: parseFloat(extractField('high', '0')) || 0,
+            low: parseFloat(extractField('low', '0')) || 0,
+            close: parseFloat(extractField('close', '0')) || 0
+        };
+        
+        // Extract pattern details
+        extracted.pattern_details = {
+            c1_high: parseFloat(extractField('c1_high', '0')) || 0,
+            c1_low: parseFloat(extractField('c1_low', '0')) || 0,
+            c2_high: parseFloat(extractField('c2_high', '0')) || 0,
+            c2_low: parseFloat(extractField('c2_low', '0')) || 0,
+            is_high_sweep: extractField('is_high_sweep', false),
+            pattern_id: parseInt(extractField('pattern_id', '0')) || 0
+        };
+        
+        // Extract market context
+        extracted.market_context = {
+            current_atr: parseFloat(extractField('current_atr', '0')) || 0,
+            rsi: parseFloat(extractField('rsi', '50')) || 50,
+            timestamp: parseInt(extractField('timestamp', Date.now().toString())) || Date.now()
+        };
         
         console.log('✅ Manual extraction completed:', {
             symbol: extracted.symbol,
-            direction: extracted.acrdirection,
-            price: extracted.currentltfprice
+            direction: extracted.acr_direction,
+            price: extracted.current_ltf_price
         });
         
         return extracted;
@@ -424,83 +556,49 @@ function extractDataManually(rawData) {
             error: 'Manual extraction failed', 
             raw: rawData,
             symbol: 'EXTRACT_ERROR',
-            acrdirection: 'UNKNOWN'
+            acr_direction: 'UNKNOWN'
         };
     }
 }
-// Data Mapper - Convert dari Pine Script naming ke internal naming
-function mapAlertData(parsedData) {
-    // Map field names dari Pine Script ke format internal
-    const mapped = {
-        symbol: parsedData.symbol || parsedData.ticker || 'UNKNOWN',
-        alert_type: parsedData.alerttype || parsedData.alert_type || 'HTF_ACR_SWEEP',
-        current_price: parsedData.currentltfprice || parsedData.current_ltf_price || parsedData.current_price || '0.00000',
-        timeframe: parsedData.ltftimeframe || parsedData.ltf_timeframe || parsedData.timeframe || '1',
-        htf: parsedData.htftimeframe || parsedData.htf_timeframe || parsedData.htf || '15',
-        htf_bar_time: parsedData.htfbartime || parsedData.htf_bar_time || parsedData.alert_time || Date.now(),
-        acr_direction: parsedData.acrdirection || parsedData.acr_direction || 'NEUTRAL',
-        sweep_level: parsedData.sweeplevel || parsedData.sweep_level || '0.00000',
-        cisd_status: parsedData.cisdstatus || parsedData.cisd_status || 'NEUTRAL',
-        cisd_direction: parsedData.cisddirection || parsedData.cisd_direction || '',
-        acrx_signals: parsedData.acrxsignals || parsedData.acrx_signals || '',
-        htf_change_pct: parsedData.htfchangepct || parsedData.htf_change_pct || parsedData.price_change_1h || 0,
-        htf_volume: parsedData.htfvolume || parsedData.htf_volume || parsedData.volume || 0,
-        
-        // OHLC data
-        htf_ohlc: parsedData.htfohlc || parsedData.htf_ohlc || {},
-        ltf_ohlc: parsedData.ltfohlc || parsedData.ltf_ohlc || {},
-        
-        // Pattern details
-        pattern_details: parsedData.patterndetails || parsedData.pattern_details || {},
-        
-        // Market context
-        market_context: parsedData.marketcontext || parsedData.market_context || {},
-        
-        // Keep original data for reference
-        _original: parsedData
-    };
-    
-    console.log('📊 Data mapped successfully:', {
-        symbol: mapped.symbol,
-        direction: mapped.acr_direction,
-        price: mapped.current_price,
-        htf: mapped.htf
-    });
-    
-    return mapped;
-}
 
-// ULTRA-CLEAN Message Formatter dengan error handling
+// Enhanced message formatter sesuai Pine Script data
 function formatMessage(data) {
     try {
-        // Extract data dengan mapping yang benar
+        // Extract data dengan field names yang benar
         const symbol = (data.symbol || 'UNKNOWN').toString().replace(/[^\w]/g, '');
         const direction = data.acr_direction || 'NEUTRAL';
-        const price = (data.current_price || '0.00000').toString();
+        const ltfPrice = (data.current_ltf_price || '0.00000').toString();
         const sweep = (data.sweep_level || '0.00000').toString();
         const cisd = data.cisd_status || 'NEUTRAL';
+        const cisdDir = data.cisd_direction || 'NONE';
         const acrx = data.acrx_signals || '';
-        const ltfTF = data.timeframe || '1';
-        const htfTF = data.htf || '15';
+        const ltfTF = data.ltf_timeframe || '1';
+        const htfTF = data.htf_timeframe || '15';
         
-        // Current time & session (FIXED timezone)
+        // HTF OHLC data
+        const htfOpen = data.htf_ohlc?.open || 0;
+        const htfHigh = data.htf_ohlc?.high || 0;
+        const htfLow = data.htf_ohlc?.low || 0;
+        const htfClose = data.htf_ohlc?.close || 0;
+        
+        // Current time & session
         const now = moment().tz('Asia/Jakarta');
         const timeStr = now.format('DD/MM/YYYY HH:mm:ss');
         const session = getMarketSession();
         const tip = getRandomTip();
         
-        // Emojis
+        // Emojis berdasarkan direction
         const dirEmoji = direction === 'BULLISH' ? '🟢' : direction === 'BEARISH' ? '🔴' : '⚪';
         const arrow = direction === 'BULLISH' ? '📈' : direction === 'BEARISH' ? '📉' : '➖';
         const icon = direction === 'BULLISH' ? '🚀' : direction === 'BEARISH' ? '🎯' : '🔄';
         const cisdEmoji = cisd.includes('BULLISH') ? '🟢' : cisd.includes('BEARISH') ? '🔴' : '⚪';
         
-        // Price change
+        // HTF price change
         const change = parseFloat(data.htf_change_pct) || 0;
         const changeEmoji = change > 0 ? '📈' : change < 0 ? '📉' : '➖';
         const changeSign = change > 0 ? '+' : '';
         
-        // Signal strength
+        // Signal strength calculation
         const strength = calculateSignalStrength(data).strength;
         const strengthEmoji = getSignalEmoji(strength);
         
@@ -509,28 +607,49 @@ function formatMessage(data) {
         const volume = parseFloat(data.htf_volume) || 0;
         if (volume > 0) {
             if (volume > 1000000) {
-                volumeText = `📊 Volume: ${(volume/1000000).toFixed(1)}M\n`;
+                volumeText = `📊 HTF Volume: ${(volume/1000000).toFixed(1)}M\n`;
             } else if (volume > 1000) {
-                volumeText = `📊 Volume: ${(volume/1000).toFixed(1)}K\n`;
+                volumeText = `📊 HTF Volume: ${(volume/1000).toFixed(1)}K\n`;
             } else {
-                volumeText = `📊 Volume: ${volume.toFixed(0)}\n`;
+                volumeText = `📊 HTF Volume: ${volume.toFixed(0)}\n`;
             }
+        }
+        
+        // Pattern details
+        let patternText = '';
+        if (data.pattern_details && data.pattern_details.pattern_id > 0) {
+            patternText = `🔄 Pattern ID: ${data.pattern_details.pattern_id}\n`;
+            if (data.pattern_details.c1_high > 0 && data.pattern_details.c1_low > 0) {
+                patternText += `📊 C1: ${data.pattern_details.c1_high} / ${data.pattern_details.c1_low}\n`;
+            }
+        }
+        
+        // Market context
+        let contextText = '';
+        if (data.market_context && data.market_context.current_atr > 0) {
+            contextText = `📈 ATR: ${data.market_context.current_atr.toFixed(5)}\n`;
+            contextText += `📊 RSI: ${data.market_context.rsi.toFixed(1)}\n`;
         }
         
         // Market analysis
         const analysis = getMarketAnalysis(direction, acrx);
         
-        // BUILD MESSAGE LINE BY LINE (FIXED)
+        // BUILD MESSAGE
         let msg = '';
-        msg += '🚨 AUDENFX SIGNAL ALERT 🚨\n';
+        msg += '🚨 AUDENFX HTF SIGNAL ALERT 🚨\n';
         msg += '\n';
         msg += `${icon} ${symbol} | ${formatTimeframe(ltfTF)} → ${formatTimeframe(htfTF)}\n`;
-        msg += `${dirEmoji} ${direction} ACR ${arrow}\n`;
+        msg += `${dirEmoji} ${direction} ACR SWEEP ${arrow}\n`;
         msg += `${strengthEmoji} Signal Strength: ${strength}%\n`;
         msg += '━━━━━━━━━━━━━━━━━━━━━━\n';
         msg += '\n';
-        msg += `💰 Current Price: ${price}\n`;
+        
+        // Price information
+        msg += `💰 LTF Price: ${ltfPrice}\n`;
         msg += `🎯 Sweep Level: ${sweep}\n`;
+        if (htfClose > 0) {
+            msg += `📊 HTF Close: ${htfClose.toFixed(5)}\n`;
+        }
         msg += `${changeEmoji} HTF Change: ${changeSign}${Math.abs(change).toFixed(2)}%\n`;
         
         // Add volume if available
@@ -539,10 +658,28 @@ function formatMessage(data) {
         }
         
         msg += '\n';
-        msg += `${cisdEmoji} CISD: ${cisd}\n`;
         
+        // CISD information
+        msg += `${cisdEmoji} CISD Status: ${cisd}\n`;
+        if (cisdDir !== 'NONE' && cisdDir !== '') {
+            msg += `🎯 CISD Direction: ${cisdDir}\n`;
+        }
+        
+        // ACRX signals
         if (acrx && acrx !== '') {
-            msg += `⚡ ACR+: ${acrx}\n`;
+            msg += `⚡ ACR+ Signals: ${acrx}\n`;
+        }
+        
+        msg += '\n';
+        
+        // Pattern details if available
+        if (patternText) {
+            msg += patternText;
+        }
+        
+        // Market context if available
+        if (contextText) {
+            msg += contextText;
         }
         
         msg += `📊 Analysis: ${analysis}\n`;
@@ -564,9 +701,10 @@ function formatMessage(data) {
     } catch (error) {
         console.error('Format error:', error);
         const now = moment().tz('Asia/Jakarta');
-        return `🚨 AUDENFX ALERT\n\nFormatting Error Occurred\nData received but processing failed\n\n⏰ ${now.format('DD/MM/YYYY HH:mm:ss')} WIB\n${getMarketSession()}\n\n⚠️ Always DYOR`;
+        return `🚨 AUDENFX HTF ALERT\n\nFormatting Error Occurred\nData received but processing failed\n\n⏰ ${now.format('DD/MM/YYYY HH:mm:ss')} WIB\n${getMarketSession()}\n\n⚠️ Always DYOR`;
     }
 }
+
 
 // Enhanced validation function
 async function validateBotCredentials() {
@@ -808,7 +946,7 @@ app.post('/webhook/tradingview', async (req, res) => {
     }
 });
 
-// Enhanced test endpoint
+// Enhanced test dengan format Pine Script yang tepat
 app.post('/test', async (req, res) => {
     try {
         const validation = await validateBotCredentials();
@@ -821,21 +959,46 @@ app.post('/test', async (req, res) => {
             });
         }
 
-        // Test dengan format yang sama seperti TradingView
+        // Test data sesuai Pine Script buildHTFAlertData()
         const testData = {
             symbol: 'EURUSD',
-            alerttype: 'HTFACRSWEEP',
-            currentltfprice: 1.08425,
-            ltftimeframe: '1',
-            htftimeframe: '240',
-            htfbartime: Date.now(),
-            acrdirection: 'BULLISH',
-            sweeplevel: 1.08550,
-            cisdstatus: 'BULLISH CISD',
-            cisddirection: 'BUY SETUP',
-            acrxsignals: 'CISD / EXP',
-            htfchangepct: 0.45,
-            htfvolume: 1250000
+            alert_type: 'HTF_ACR_SWEEP',
+            current_ltf_price: 1.08425,
+            ltf_timeframe: '1',
+            htf_timeframe: '240',
+            htf_bar_time: Date.now(),
+            acr_direction: 'BULLISH',
+            sweep_level: 1.08550,
+            cisd_status: 'BULLISH CISD',
+            cisd_direction: 'BUY SETUP',
+            acrx_signals: 'CISD / EXP',
+            htf_change_pct: 0.45,
+            htf_volume: 1250000,
+            htf_ohlc: {
+                open: 1.08400,
+                high: 1.08580,
+                low: 1.08390,
+                close: 1.08425
+            },
+            ltf_ohlc: {
+                open: 1.08420,
+                high: 1.08430,
+                low: 1.08415,
+                close: 1.08425
+            },
+            pattern_details: {
+                c1_high: 1.08500,
+                c1_low: 1.08380,
+                c2_high: 1.08580,
+                c2_low: 1.08450,
+                is_high_sweep: false,
+                pattern_id: 1
+            },
+            market_context: {
+                current_atr: 0.00085,
+                rsi: 58.5,
+                timestamp: Date.now()
+            }
         };
 
         const mappedData = mapAlertData(testData);
@@ -848,9 +1011,8 @@ app.post('/test', async (req, res) => {
             error: result.ok ? null : result.error,
             test_info: {
                 signal_strength: calculateSignalStrength(mappedData).strength,
-                quotes_available: tradingTips.length,
-                formatting_fixed: true,
-                timezone_fixed: true
+                data_fields_mapped: Object.keys(mappedData).length,
+                pine_script_compatible: true
             }
         });
 
