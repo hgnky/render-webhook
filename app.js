@@ -704,7 +704,7 @@ app.get('/', async (req, res) => {
     });
 });
 
-// MAIN WEBHOOK ENDPOINT - FIXED untuk handle TradingView data
+// MAIN WEBHOOK ENDPOINT - ENHANCED ERROR HANDLING
 app.post('/webhook/tradingview', async (req, res) => {
     try {
         // Quick validation
@@ -720,85 +720,86 @@ app.post('/webhook/tradingview', async (req, res) => {
 
         console.log('📨 TradingView webhook received');
         console.log('Content-Type:', req.headers['content-type']);
-        console.log('Raw body type:', typeof req.body);
-        console.log('Raw body sample:', typeof req.body === 'string' ? req.body.substring(0, 200) + '...' : req.body);
+        console.log('Body type:', typeof req.body);
+        console.log('Body length:', typeof req.body === 'string' ? req.body.length : 'N/A');
         
-        // SMART PARSING - Handle semua format dari TradingView
+        // ENHANCED PARSING dengan detailed logging
+        console.log('🔍 Starting data parsing...');
         const parsedData = parseAlertData(req.body);
         
-        // Check jika parsing error
-        if (parsedData.error) {
-            console.log('⚠️ Parse error, sending as plain text:', parsedData.error);
+        // Check hasil parsing
+        if (parsedData.error && !parsedData.symbol) {
+            console.log('❌ Complete parsing failure:', parsedData.error);
             
-            const plainMessage = `🚨 AudenFX Alert\n\nData received but parsing failed\nRaw data: ${typeof req.body === 'string' ? req.body.substring(0, 500) : JSON.stringify(req.body).substring(0, 500)}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')} WIB\n${getMarketSession()}\n\n⚠️ Always DYOR`;
+            const errorMessage = `🚨 AudenFX Alert - Parse Error\n\nUnable to process incoming data\nError: ${parsedData.error}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')} WIB\n${getMarketSession()}\n\n⚠️ Check TradingView alert format`;
             
-            const result = await sendToTelegram(plainMessage);
-            
-            return res.status(result.ok ? 200 : 500).json({
-                success: result.ok,
-                message: result.ok ? 'Plain text alert sent (parse error)' : 'Failed to send alert',
-                error: result.ok ? null : result.error,
-                parse_error: parsedData.error
-            });
-        }
-        
-        // Check jika plain text
-        if (parsedData.plain_text) {
-            console.log('📝 Plain text detected, formatting simple message');
-            
-            const simpleMessage = `🚨 AudenFX Alert\n\n${parsedData.plain_text}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')} WIB\n${getMarketSession()}\n\n⚠️ Always DYOR`;
-            
-            const result = await sendToTelegram(simpleMessage);
+            const result = await sendToTelegram(errorMessage);
             
             return res.status(result.ok ? 200 : 500).json({
                 success: result.ok,
-                message: result.ok ? 'Plain text alert sent' : 'Failed to send alert',
-                error: result.ok ? null : result.error
+                message: 'Parse error alert sent',
+                error: parsedData.error,
+                suggestion: 'Check TradingView alert JSON format'
             });
         }
-
-        // MAP DATA dari Pine Script format ke internal format
-        const mappedData = mapAlertData(parsedData);
         
-        console.log('✅ Data parsed and mapped successfully:', {
-            symbol: mappedData.symbol,
-            direction: mappedData.acr_direction,
-            price: mappedData.current_price,
-            type: mappedData.alert_type
-        });
-
-        // FORMAT MESSAGE
-        const formattedMessage = formatMessage(mappedData);
-        
-        // SEND TO TELEGRAM
-        const result = await sendToTelegram(formattedMessage);
-        
-        if (result.ok) {
-            console.log(`✅ HTF Alert sent successfully: ${mappedData.symbol} ${mappedData.acr_direction}`);
+        // Check jika parsing berhasil (manual atau normal)
+        if (parsedData.symbol && parsedData.symbol !== 'UNKNOWN' && parsedData.symbol !== 'EXTRACT_ERROR') {
+            console.log('✅ Data parsing successful');
             
-            res.status(200).json({
-                success: true,
-                message: 'HTF Alert sent to Telegram successfully',
-                data: {
-                    symbol: mappedData.symbol,
-                    direction: mappedData.acr_direction,
-                    alert_type: mappedData.alert_type,
-                    signal_strength: calculateSignalStrength(mappedData).strength,
-                    timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')
-                }
+            // MAP DATA
+            const mappedData = mapAlertData(parsedData);
+            
+            console.log('📊 Alert data processed:', {
+                symbol: mappedData.symbol,
+                direction: mappedData.acr_direction,
+                price: mappedData.current_price,
+                parsing_method: parsedData.parsing_method || 'json'
             });
+
+            // FORMAT MESSAGE
+            const formattedMessage = formatMessage(mappedData);
+            
+            // SEND TO TELEGRAM
+            const result = await sendToTelegram(formattedMessage);
+            
+            if (result.ok) {
+                console.log(`✅ Alert sent: ${mappedData.symbol} ${mappedData.acr_direction} (${parsedData.parsing_method || 'json'})`);
+                
+                res.status(200).json({
+                    success: true,
+                    message: 'HTF Alert sent successfully',
+                    data: {
+                        symbol: mappedData.symbol,
+                        direction: mappedData.acr_direction,
+                        parsing_method: parsedData.parsing_method || 'json',
+                        signal_strength: calculateSignalStrength(mappedData).strength,
+                        timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')
+                    }
+                });
+            } else {
+                console.error('❌ Failed to send alert:', result.error);
+                res.status(500).json({
+                    success: false,
+                    error: result.error
+                });
+            }
         } else {
-            console.error('❌ Failed to send HTF alert:', result.error);
-            res.status(500).json({
-                success: false,
-                message: 'Failed to send HTF alert to Telegram',
-                error: result.error,
-                status_code: result.status_code
+            console.log('⚠️ Partial parsing, sending diagnostic message');
+            
+            const diagnosticMessage = `🚨 AudenFX Alert - Partial Data\n\nReceived data but extraction incomplete\nSymbol detected: ${parsedData.symbol || 'None'}\nDirection: ${parsedData.acrdirection || 'None'}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')} WIB\n\n⚠️ Check TradingView alert configuration`;
+            
+            const result = await sendToTelegram(diagnosticMessage);
+            
+            res.status(result.ok ? 200 : 500).json({
+                success: result.ok,
+                message: 'Partial data alert sent',
+                extracted_fields: Object.keys(parsedData).filter(key => key !== 'error' && key !== 'raw')
             });
         }
 
     } catch (error) {
-        console.error('❌ Webhook processing error:', error);
+        console.error('💥 Webhook processing error:', error);
         res.status(500).json({
             success: false,
             error: error.message,
@@ -862,31 +863,25 @@ app.post('/test', async (req, res) => {
     }
 });
 
-// Debug endpoint
-app.get('/debug', async (req, res) => {
-    const validation = await validateBotCredentials();
+// Test endpoint untuk debugging parsing
+app.post('/test-parse', (req, res) => {
+    console.log('🧪 Testing parsing with sample malformed data...');
+    
+    const sampleMalformedData = `"symbol":"GBPUSD","alerttype":"HTFACRSWEEP","currentltfprice":1.35264,"ltftimeframe":"1","htftimeframe":"15","htfbartime":1758670200000,"acrdirection":"BULLISH","sweeplevel":1.35243,"cisdstatus":"BULLISH CISD","cisddirection":"BUY SETUP","acrxsignals":"","htfchangepct":0,"htfvolume":81,"htfohlc":"open":1.35264,"high":1.35268,"low":1.35258,"close":1.35266`;
+    
+    const parsed = parseAlertData(sampleMalformedData);
+    const mapped = mapAlertData(parsed);
     
     res.json({
-        debug_info: {
-            version: '2.2 - Smart Parser + Fixed Formatting',
-            timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
-            environment: {
-                BOT_TOKEN_present: !!BOT_TOKEN,
-                BOT_TOKEN_format: BOT_TOKEN ? `${BOT_TOKEN.substring(0, 10)}...` : 'MISSING',
-                CHAT_ID_present: !!CHAT_ID,
-                CHAT_ID_value: CHAT_ID || 'MISSING'
-            },
-            validation_result: validation,
-            market_session: getMarketSession(),
-            random_tip: getRandomTip(),
-            quotes_count: tradingTips.length,
-            fixes_applied: [
-                'Smart JSON Parser (handles malformed data)',
-                'Field mapping (Pine Script → Internal)',
-                'Fixed timezone (WIB)',
-                'Proper newline formatting',
-                'Error handling for all scenarios'
-            ]
+        test_result: 'Parse test completed',
+        original_data_type: typeof sampleMalformedData,
+        parsing_successful: !parsed.error,
+        parsing_method: parsed.parsing_method || 'json',
+        extracted_fields: Object.keys(parsed),
+        mapped_data: {
+            symbol: mapped.symbol,
+            direction: mapped.acr_direction,
+            price: mapped.current_price
         }
     });
 });
