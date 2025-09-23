@@ -1,14 +1,16 @@
 {
-  "name": "audenfx-webhook",
+  "name": "audenfx-telegram-bot",
   "version": "1.0.0",
-  "description": "AudenFX Telegram Webhook Server",
-  "main": "index.js",
+  "description": "Professional Telegram Alert Bot for AudenFX",
+  "main": "app.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node app.js",
+    "dev": "node app.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "moment-timezone": "^0.5.43"
   },
   "engines": {
     "node": "18.x"
