@@ -14,7 +14,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.text({ type: 'text/plain', limit: '10mb' }));
 
-// Enable CORS for development
+// Enable CORS
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -247,7 +247,7 @@ function calculateSignalStrength(data) {
     }
     
     // Price momentum
-    const priceChange = parseFloat(data.price_change_1h) || 0;
+    const priceChange = parseFloat(data.htf_change_pct) || parseFloat(data.price_change_1h) || 0;
     if (Math.abs(priceChange) > 0.5) {
         strength += 10;
         factors.push('HTF Momentum');
@@ -266,153 +266,202 @@ function getSignalEmoji(strength) {
     return '⭐';
 }
 
-// Helper function to extract basic data
-function extractBasicData(data) {
-    return {
-        symbol: data.symbol || data.ticker || 'UNKNOWN',
-        direction: data.acr_direction || data.direction || 'NEUTRAL',
-        price: data.current_price || data.price || '0.00000',
-        timeframe: data.htf || data.timeframe || 'Unknown'
-    };
-}
-
-// FIXED: Proper newline formatting for Telegram
-function formatMessage(data) {
+// SMART JSON Parser - Handle both object dan string
+function parseAlertData(rawData) {
     try {
-        const {
-            symbol = 'Unknown',
-            current_price = '0.00000',
-            timeframe = '15',
-            htf = '1H',
-            acr_direction = 'NEUTRAL',
-            sweep_level = '0.00000',
-            cisd_status = 'NEUTRAL',
-            acrx_signals = '',
-            price_change_1h = '0',
-            volume = '0'
-        } = data;
-
-        // Clean data dengan proper handling
-        const cleanSymbol = (symbol || 'UNKNOWN').toString().replace(/[^\w]/g, '');
-        const cleanPrice = (current_price || '0.00000').toString().replace(/[^0-9.]/g, '');
-        const cleanSweep = (sweep_level || '0.00000').toString().replace(/[^0-9.]/g, '');
-        const cleanCISD = (cisd_status || 'NEUTRAL').toString();
-        const cleanACRX = (acrx_signals || '').toString();
+        // Jika sudah object, langsung return
+        if (typeof rawData === 'object' && rawData !== null) {
+            return rawData;
+        }
         
-        // Get fresh data
-        const currentTime = moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss');
-        const marketSession = getMarketSession();
-        const randomTip = getRandomTip();
-        
-        // Direction styling
-        const isbullish = acr_direction === 'BULLISH';
-        const isbearish = acr_direction === 'BEARISH';
-        const directionEmoji = isbullish ? '🟢' : isbearish ? '🔴' : '⚪';
-        const trendArrow = isbullish ? '📈' : isbearish ? '📉' : '➖';
-        const setupIcon = isbullish ? '🚀' : isbearish ? '🎯' : '🔄';
-        
-        // Price change
-        const priceChange = parseFloat(price_change_1h) || 0;
-        const changeEmoji = priceChange > 0 ? '📈' : priceChange < 0 ? '📉' : '➖';
-        const changeSign = priceChange > 0 ? '+' : '';
-        
-        // CISD emoji
-        const cisdEmoji = cleanCISD.includes('BULLISH') ? '🟢' : 
-                          cleanCISD.includes('BEARISH') ? '🔴' : '⚪';
-
-        // Signal strength
-        const signalData = calculateSignalStrength(data);
-        const strengthEmoji = getSignalEmoji(signalData.strength);
-
-        // Volume formatting
-        let volumeText = '';
-        if (volume && volume !== '0') {
-            const vol = parseFloat(volume);
-            if (!isNaN(vol) && vol > 0) {
-                if (vol > 1000000) {
-                    volumeText = `📊 Volume: ${(vol/1000000).toFixed(1)}M`;
-                } else if (vol > 1000) {
-                    volumeText = `📊 Volume: ${(vol/1000).toFixed(1)}K`;
-                } else {
-                    volumeText = `📊 Volume: ${vol.toFixed(0)}`;
-                }
+        // Jika string, coba parse JSON
+        if (typeof rawData === 'string') {
+            // Clean string dulu (remove extra quotes, spaces, etc)
+            let cleanData = rawData.trim();
+            
+            // Cek apakah ini JSON string
+            if (cleanData.startsWith('{') && cleanData.endsWith('}')) {
+                return JSON.parse(cleanData);
             }
-        }
-
-        // Market analysis
-        const analysis = getMarketAnalysis(acr_direction, cleanACRX);
-
-        // BUILD MESSAGE dengan explicit line breaks
-        const lines = [
-            '🚨 AUDENFX SIGNAL ALERT 🚨',
-            '',
-            `${setupIcon} ${cleanSymbol} | ${formatTimeframe(timeframe)} → ${formatTimeframe(htf)}`,
-            `${directionEmoji} ${acr_direction} ACR ${trendArrow}`,
-            `${strengthEmoji} Signal Strength: ${signalData.strength}%`,
-            '━━━━━━━━━━━━━━━━━━━━━━',
-            '',
-            `💰 Current Price: ${cleanPrice}`,
-            `🎯 Sweep Level: ${cleanSweep}`,
-            `${changeEmoji} 1H Change: ${changeSign}${Math.abs(priceChange).toFixed(2)}%`
-        ];
-
-        // Add volume if available
-        if (volumeText) {
-            lines.push(volumeText);
+            
+            // Cek apakah ini malformed JSON (tanpa brackets)
+            if (cleanData.includes('"symbol"') && cleanData.includes('"acrdirection"')) {
+                // Add brackets kalau missing
+                if (!cleanData.startsWith('{')) {
+                    cleanData = '{' + cleanData;
+                }
+                if (!cleanData.endsWith('}')) {
+                    cleanData = cleanData + '}';
+                }
+                
+                // Fix common JSON issues
+                cleanData = cleanData.replace(/([{,]\s*)(\w+):/g, '$1"$2":'); // Add quotes to keys
+                cleanData = cleanData.replace(/:\s*([^",{\[\]}\s][^",}\[\]]*)/g, ':"$1"'); // Add quotes to unquoted values
+                cleanData = cleanData.replace(/:"(\d+\.?\d*)"/g, ':$1'); // Remove quotes from numbers
+                cleanData = cleanData.replace(/:"(true|false|null)"/g, ':$1'); // Remove quotes from booleans/null
+                
+                return JSON.parse(cleanData);
+            }
+            
+            // Jika bukan JSON, return sebagai plain text indicator
+            return { plain_text: cleanData };
         }
         
-        lines.push('');
-
-        // Signal info
-        lines.push(`${cisdEmoji} CISD: ${cleanCISD}`);
-        if (cleanACRX && cleanACRX !== '') {
-            lines.push(`⚡ ACR+: ${cleanACRX}`);
-        }
-        lines.push(`📊 Analysis: ${analysis}`);
-        lines.push('');
-
-        // Session & Time
-        lines.push(marketSession);
-        lines.push(`🕐 Alert Time: ${currentTime} WIB`);
-        lines.push('');
-
-        // Tip
-        lines.push('💡 Kata-Kata Hari Ini King:');
-        lines.push(`"${randomTip}"`);
-        lines.push('');
-
-        // Footer
-        lines.push('━━━━━━━━━━━━━━━━━━━━━━');
-        lines.push('⚠️ Risk Management is Key');
-        lines.push('📊 Always DYOR • NFA');
-        lines.push(`#AudenFX #${cleanSymbol} #${acr_direction}ACR`);
-
-        // Join dengan newline yang benar
-        const finalMessage = lines.join('\n');
-        
-        console.log('📝 Message formatted with', lines.length, 'lines');
-        return finalMessage;
+        // Fallback
+        return { error: 'Unable to parse data', raw: rawData };
         
     } catch (error) {
-        console.error('Format message error:', error);
-        
-        // Ultra-safe fallback dengan explicit newlines
-        const fallbackLines = [
-            '🚨 AUDENFX ALERT',
-            '',
-            `📊 ${data.symbol || 'Unknown'}`,
-            `🎯 ${data.acr_direction || 'Unknown'} ACR`,
-            `💰 Price: ${data.current_price || '0'}`,
-            `🎯 Sweep: ${data.sweep_level || '0'}`,
-            '',
-            `⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')} WIB`,
-            '',
-            '⚠️ Always DYOR - NFA'
-        ];
-        
-        return fallbackLines.join('\n');
+        console.error('Parse error:', error.message);
+        // Return data yang bisa digunakan minimal
+        return { 
+            error: 'Parse failed', 
+            raw: rawData,
+            symbol: 'PARSE_ERROR',
+            acr_direction: 'UNKNOWN'
+        };
     }
 }
+
+// Data Mapper - Convert dari Pine Script naming ke internal naming
+function mapAlertData(parsedData) {
+    // Map field names dari Pine Script ke format internal
+    const mapped = {
+        symbol: parsedData.symbol || parsedData.ticker || 'UNKNOWN',
+        alert_type: parsedData.alerttype || parsedData.alert_type || 'HTF_ACR_SWEEP',
+        current_price: parsedData.currentltfprice || parsedData.current_ltf_price || parsedData.current_price || '0.00000',
+        timeframe: parsedData.ltftimeframe || parsedData.ltf_timeframe || parsedData.timeframe || '1',
+        htf: parsedData.htftimeframe || parsedData.htf_timeframe || parsedData.htf || '15',
+        htf_bar_time: parsedData.htfbartime || parsedData.htf_bar_time || parsedData.alert_time || Date.now(),
+        acr_direction: parsedData.acrdirection || parsedData.acr_direction || 'NEUTRAL',
+        sweep_level: parsedData.sweeplevel || parsedData.sweep_level || '0.00000',
+        cisd_status: parsedData.cisdstatus || parsedData.cisd_status || 'NEUTRAL',
+        cisd_direction: parsedData.cisddirection || parsedData.cisd_direction || '',
+        acrx_signals: parsedData.acrxsignals || parsedData.acrx_signals || '',
+        htf_change_pct: parsedData.htfchangepct || parsedData.htf_change_pct || parsedData.price_change_1h || 0,
+        htf_volume: parsedData.htfvolume || parsedData.htf_volume || parsedData.volume || 0,
+        
+        // OHLC data
+        htf_ohlc: parsedData.htfohlc || parsedData.htf_ohlc || {},
+        ltf_ohlc: parsedData.ltfohlc || parsedData.ltf_ohlc || {},
+        
+        // Pattern details
+        pattern_details: parsedData.patterndetails || parsedData.pattern_details || {},
+        
+        // Market context
+        market_context: parsedData.marketcontext || parsedData.market_context || {},
+        
+        // Keep original data for reference
+        _original: parsedData
+    };
+    
+    console.log('📊 Data mapped successfully:', {
+        symbol: mapped.symbol,
+        direction: mapped.acr_direction,
+        price: mapped.current_price,
+        htf: mapped.htf
+    });
+    
+    return mapped;
+}
+
+// ULTRA-CLEAN Message Formatter dengan error handling
+function formatMessage(data) {
+    try {
+        // Extract data dengan mapping yang benar
+        const symbol = (data.symbol || 'UNKNOWN').toString().replace(/[^\w]/g, '');
+        const direction = data.acr_direction || 'NEUTRAL';
+        const price = (data.current_price || '0.00000').toString();
+        const sweep = (data.sweep_level || '0.00000').toString();
+        const cisd = data.cisd_status || 'NEUTRAL';
+        const acrx = data.acrx_signals || '';
+        const ltfTF = data.timeframe || '1';
+        const htfTF = data.htf || '15';
+        
+        // Current time & session (FIXED timezone)
+        const now = moment().tz('Asia/Jakarta');
+        const timeStr = now.format('DD/MM/YYYY HH:mm:ss');
+        const session = getMarketSession();
+        const tip = getRandomTip();
+        
+        // Emojis
+        const dirEmoji = direction === 'BULLISH' ? '🟢' : direction === 'BEARISH' ? '🔴' : '⚪';
+        const arrow = direction === 'BULLISH' ? '📈' : direction === 'BEARISH' ? '📉' : '➖';
+        const icon = direction === 'BULLISH' ? '🚀' : direction === 'BEARISH' ? '🎯' : '🔄';
+        const cisdEmoji = cisd.includes('BULLISH') ? '🟢' : cisd.includes('BEARISH') ? '🔴' : '⚪';
+        
+        // Price change
+        const change = parseFloat(data.htf_change_pct) || 0;
+        const changeEmoji = change > 0 ? '📈' : change < 0 ? '📉' : '➖';
+        const changeSign = change > 0 ? '+' : '';
+        
+        // Signal strength
+        const strength = calculateSignalStrength(data).strength;
+        const strengthEmoji = getSignalEmoji(strength);
+        
+        // Volume formatting
+        let volumeText = '';
+        const volume = parseFloat(data.htf_volume) || 0;
+        if (volume > 0) {
+            if (volume > 1000000) {
+                volumeText = `📊 Volume: ${(volume/1000000).toFixed(1)}M\n`;
+            } else if (volume > 1000) {
+                volumeText = `📊 Volume: ${(volume/1000).toFixed(1)}K\n`;
+            } else {
+                volumeText = `📊 Volume: ${volume.toFixed(0)}\n`;
+            }
+        }
+        
+        // Market analysis
+        const analysis = getMarketAnalysis(direction, acrx);
+        
+        // BUILD MESSAGE LINE BY LINE (FIXED)
+        let msg = '';
+        msg += '🚨 AUDENFX SIGNAL ALERT 🚨\n';
+        msg += '\n';
+        msg += `${icon} ${symbol} | ${formatTimeframe(ltfTF)} → ${formatTimeframe(htfTF)}\n`;
+        msg += `${dirEmoji} ${direction} ACR ${arrow}\n`;
+        msg += `${strengthEmoji} Signal Strength: ${strength}%\n`;
+        msg += '━━━━━━━━━━━━━━━━━━━━━━\n';
+        msg += '\n';
+        msg += `💰 Current Price: ${price}\n`;
+        msg += `🎯 Sweep Level: ${sweep}\n`;
+        msg += `${changeEmoji} HTF Change: ${changeSign}${Math.abs(change).toFixed(2)}%\n`;
+        
+        // Add volume if available
+        if (volumeText) {
+            msg += volumeText;
+        }
+        
+        msg += '\n';
+        msg += `${cisdEmoji} CISD: ${cisd}\n`;
+        
+        if (acrx && acrx !== '') {
+            msg += `⚡ ACR+: ${acrx}\n`;
+        }
+        
+        msg += `📊 Analysis: ${analysis}\n`;
+        msg += '\n';
+        msg += `${session}\n`;
+        msg += `🕐 Alert Time: ${timeStr} WIB\n`;
+        msg += '\n';
+        msg += '💡 Kata-Kata Hari Ini King:\n';
+        msg += `"${tip}"\n`;
+        msg += '\n';
+        msg += '━━━━━━━━━━━━━━━━━━━━━━\n';
+        msg += '⚠️ Risk Management is Key\n';
+        msg += '📊 Always DYOR • NFA\n';
+        msg += `#AudenFX #${symbol} #${direction}ACR`;
+        
+        console.log('✅ Message formatted successfully');
+        return msg;
+        
+    } catch (error) {
+        console.error('Format error:', error);
+        const now = moment().tz('Asia/Jakarta');
+        return `🚨 AUDENFX ALERT\n\nFormatting Error Occurred\nData received but processing failed\n\n⏰ ${now.format('DD/MM/YYYY HH:mm:ss')} WIB\n${getMarketSession()}\n\n⚠️ Always DYOR`;
+    }
+}
+
 // Enhanced validation function
 async function validateBotCredentials() {
     if (!BOT_TOKEN || !CHAT_ID) {
@@ -423,7 +472,7 @@ async function validateBotCredentials() {
     }
 
     try {
-        // Test bot token with timeout
+        // Test bot token
         const botInfoUrl = `https://api.telegram.org/bot${BOT_TOKEN}/getMe`;
         const botResponse = await axios.get(botInfoUrl, { timeout: 10000 });
         
@@ -466,12 +515,12 @@ async function sendToTelegram(message, retries = 2) {
     // Remove hanya karakter berbahaya, KEEP newlines
     cleanMessage = cleanMessage.replace(/[*_`\[\]()~>#+=|{}!\\]/g, '');
     
-    // Ensure proper newlines (convert any weird line breaks to \n)
+    // Ensure proper newlines
     cleanMessage = cleanMessage.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     
-    // Remove excessive whitespace tapi preserve line structure
-    cleanMessage = cleanMessage.replace(/[ \t]+/g, ' '); // multiple spaces/tabs to single space
-    cleanMessage = cleanMessage.replace(/\n{3,}/g, '\n\n'); // max 2 consecutive newlines
+    // Clean excessive whitespace
+    cleanMessage = cleanMessage.replace(/[ \t]+/g, ' ');
+    cleanMessage = cleanMessage.replace(/\n{3,}/g, '\n\n');
     cleanMessage = cleanMessage.trim();
     
     // Length check
@@ -482,7 +531,7 @@ async function sendToTelegram(message, retries = 2) {
     for (let i = 0; i < retries; i++) {
         try {
             console.log(`📤 Sending message to Telegram (attempt ${i + 1}/${retries})`);
-            console.log(`📏 Message length: ${cleanMessage.length} chars, ${cleanMessage.split('\n').length} lines`);
+            console.log(`📏 Message: ${cleanMessage.length} chars, ${cleanMessage.split('\n').length} lines`);
             
             const response = await axios.post(url, {
                 chat_id: CHAT_ID,
@@ -512,6 +561,7 @@ async function sendToTelegram(message, retries = 2) {
         }
     }
 }
+
 // =================== ROUTES ===================
 
 // Health check
@@ -520,17 +570,18 @@ app.get('/', async (req, res) => {
     
     res.json({
         status: 'AudenFX HTF Alert Bot',
-        version: '2.1 - Enhanced HTF Support + Parse-Safe',
+        version: '2.2 - Smart JSON Parser + Fixed Formatting',
         bot_status: validation.valid ? '✅ Ready' : '❌ Configuration Error',
         timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
         features: [
             '🎯 HTF-based ACR Detection',
-            '⚡ ACRX Signal Processing',
+            '⚡ Smart JSON Parser (handles malformed data)',
             '📊 CISD Confirmation Analysis', 
             '🔥 Signal Strength Calculation',
             '📈 Market Context Integration',
-            '🎖️ Multi-timeframe Data Handling',
-            '🛡️ Parse-Error-Free Messaging'
+            '🛡️ Parse-Error-Free Messaging',
+            '🕐 Fixed Timezone (WIB)',
+            '📱 Proper Newline Formatting'
         ],
         quotes_available: tradingTips.length,
         server_info: {
@@ -547,7 +598,7 @@ app.get('/', async (req, res) => {
     });
 });
 
-// Main webhook endpoint - Enhanced & Parse-Safe
+// MAIN WEBHOOK ENDPOINT - FIXED untuk handle TradingView data
 app.post('/webhook/tradingview', async (req, res) => {
     try {
         // Quick validation
@@ -561,82 +612,73 @@ app.post('/webhook/tradingview', async (req, res) => {
             });
         }
 
-        console.log('📨 TradingView HTF webhook received');
+        console.log('📨 TradingView webhook received');
         console.log('Content-Type:', req.headers['content-type']);
+        console.log('Raw body type:', typeof req.body);
+        console.log('Raw body sample:', typeof req.body === 'string' ? req.body.substring(0, 200) + '...' : req.body);
         
-        let alertData;
+        // SMART PARSING - Handle semua format dari TradingView
+        const parsedData = parseAlertData(req.body);
         
-        // Parse different body formats
-        if (typeof req.body === 'string') {
-            try {
-                alertData = JSON.parse(req.body);
-                console.log('✅ Parsed JSON from string');
-            } catch (parseError) {
-                console.log('📝 Treating as plain text message');
-                
-                // Ultra-simple plain text message
-                const simpleMessage = `🚨 AudenFX Alert\n\n${req.body}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}\n${getMarketSession()}\n\n⚠️ Always DYOR`;
-                
-                const result = await sendToTelegram(simpleMessage);
-                
-                return res.status(result.ok ? 200 : 500).json({
-                    success: result.ok,
-                    message: result.ok ? 'Plain text alert sent' : 'Failed to send alert',
-                    error: result.ok ? null : result.error
-                });
-            }
-        } else if (typeof req.body === 'object') {
-            alertData = req.body;
-            console.log('✅ Using object body directly');
-        } else {
-            throw new Error('Unsupported request body format');
+        // Check jika parsing error
+        if (parsedData.error) {
+            console.log('⚠️ Parse error, sending as plain text:', parsedData.error);
+            
+            const plainMessage = `🚨 AudenFX Alert\n\nData received but parsing failed\nRaw data: ${typeof req.body === 'string' ? req.body.substring(0, 500) : JSON.stringify(req.body).substring(0, 500)}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')} WIB\n${getMarketSession()}\n\n⚠️ Always DYOR`;
+            
+            const result = await sendToTelegram(plainMessage);
+            
+            return res.status(result.ok ? 200 : 500).json({
+                success: result.ok,
+                message: result.ok ? 'Plain text alert sent (parse error)' : 'Failed to send alert',
+                error: result.ok ? null : result.error,
+                parse_error: parsedData.error
+            });
+        }
+        
+        // Check jika plain text
+        if (parsedData.plain_text) {
+            console.log('📝 Plain text detected, formatting simple message');
+            
+            const simpleMessage = `🚨 AudenFX Alert\n\n${parsedData.plain_text}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss')} WIB\n${getMarketSession()}\n\n⚠️ Always DYOR`;
+            
+            const result = await sendToTelegram(simpleMessage);
+            
+            return res.status(result.ok ? 200 : 500).json({
+                success: result.ok,
+                message: result.ok ? 'Plain text alert sent' : 'Failed to send alert',
+                error: result.ok ? null : result.error
+            });
         }
 
-        // Log received data structure
-        const basicData = extractBasicData(alertData);
-        console.log('📊 HTF Alert data received:', {
-            symbol: basicData.symbol,
-            direction: basicData.direction,
-            price: basicData.price,
-            signal_strength: calculateSignalStrength(alertData).strength
+        // MAP DATA dari Pine Script format ke internal format
+        const mappedData = mapAlertData(parsedData);
+        
+        console.log('✅ Data parsed and mapped successfully:', {
+            symbol: mappedData.symbol,
+            direction: mappedData.acr_direction,
+            price: mappedData.current_price,
+            type: mappedData.alert_type
         });
 
-        // Add server-side enrichments
-        const enrichedData = {
-            symbol: 'UNKNOWN',
-            current_price: '0.00000',
-            timeframe: '15',
-            htf: '1H', 
-            acr_direction: 'NEUTRAL',
-            sweep_level: '0.00000',
-            cisd_status: 'NEUTRAL',
-            acrx_signals: '',
-            price_change_1h: '0',
-            volume: '0',
-            ...alertData,
-            alert_time_wib: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
-            market_session: getMarketSession(),
-            random_tip: getRandomTip()
-        };
-
-        console.log('🔥 Enriched data ready for formatting');
-
-        // Format and send message
-        const formattedMessage = formatMessage(enrichedData);
+        // FORMAT MESSAGE
+        const formattedMessage = formatMessage(mappedData);
+        
+        // SEND TO TELEGRAM
         const result = await sendToTelegram(formattedMessage);
         
         if (result.ok) {
-            console.log(`✅ HTF Alert sent: ${basicData.symbol} ${basicData.direction} (Strength: ${calculateSignalStrength(enrichedData).strength}%)`);
+            console.log(`✅ HTF Alert sent successfully: ${mappedData.symbol} ${mappedData.acr_direction}`);
             
             res.status(200).json({
                 success: true,
                 message: 'HTF Alert sent to Telegram successfully',
                 data: {
-                    symbol: basicData.symbol,
-                    direction: basicData.direction,
-                    alert_type: alertData.alert_type || 'HTF_ACR',
-                    signal_strength: calculateSignalStrength(enrichedData).strength,
-                    timestamp: enrichedData.alert_time_wib
+                    symbol: mappedData.symbol,
+                    direction: mappedData.acr_direction,
+                    alert_type: mappedData.alert_type,
+                    signal_strength: calculateSignalStrength(mappedData).strength,
+                    timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')
                 }
             });
         } else {
@@ -650,7 +692,7 @@ app.post('/webhook/tradingview', async (req, res) => {
         }
 
     } catch (error) {
-        console.error('❌ HTF Webhook processing error:', error);
+        console.error('❌ Webhook processing error:', error);
         res.status(500).json({
             success: false,
             error: error.message,
@@ -672,36 +714,36 @@ app.post('/test', async (req, res) => {
             });
         }
 
-        // Create comprehensive test alert
+        // Test dengan format yang sama seperti TradingView
         const testData = {
             symbol: 'EURUSD',
-            alert_type: 'HTF_ACR_SWEEP',
-            current_price: '1.08425',
-            timeframe: '15',
-            htf: '240',
-            acr_direction: 'BULLISH',
-            sweep_level: '1.08550',
-            cisd_status: 'BULLISH CISD',
-            acrx_signals: 'CISD / EXP',
-            price_change_1h: '0.45',
-            volume: '1250000'
+            alerttype: 'HTFACRSWEEP',
+            currentltfprice: 1.08425,
+            ltftimeframe: '1',
+            htftimeframe: '240',
+            htfbartime: Date.now(),
+            acrdirection: 'BULLISH',
+            sweeplevel: 1.08550,
+            cisdstatus: 'BULLISH CISD',
+            cisddirection: 'BUY SETUP',
+            acrxsignals: 'CISD / EXP',
+            htfchangepct: 0.45,
+            htfvolume: 1250000
         };
 
-        const testMessage = formatMessage(testData);
+        const mappedData = mapAlertData(testData);
+        const testMessage = formatMessage(mappedData);
         const result = await sendToTelegram(testMessage);
         
         res.json({
             success: result.ok,
             message: result.ok ? 'Enhanced HTF test alert sent successfully!' : 'Failed to send test alert',
             error: result.ok ? null : result.error,
-            test_data: {
-                signal_strength: calculateSignalStrength(testData).strength,
+            test_info: {
+                signal_strength: calculateSignalStrength(mappedData).strength,
                 quotes_available: tradingTips.length,
-                parse_safe: true
-            },
-            bot_info: {
-                name: validation.bot_info?.first_name,
-                username: validation.bot_info?.username
+                formatting_fixed: true,
+                timezone_fixed: true
             }
         });
 
@@ -720,7 +762,7 @@ app.get('/debug', async (req, res) => {
     
     res.json({
         debug_info: {
-            version: '2.1 - HTF Enhanced + Parse-Safe',
+            version: '2.2 - Smart Parser + Fixed Formatting',
             timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
             environment: {
                 BOT_TOKEN_present: !!BOT_TOKEN,
@@ -732,14 +774,12 @@ app.get('/debug', async (req, res) => {
             market_session: getMarketSession(),
             random_tip: getRandomTip(),
             quotes_count: tradingTips.length,
-            features_enabled: [
-                'HTF ACR Detection',
-                'ACRX Signal Processing', 
-                'CISD Confirmation',
-                'Signal Strength Analysis',
-                'Multi-timeframe Context',
-                'Parse-Error-Free Messaging',
-                `${tradingTips.length}+ Trading Quotes`
+            fixes_applied: [
+                'Smart JSON Parser (handles malformed data)',
+                'Field mapping (Pine Script → Internal)',
+                'Fixed timezone (WIB)',
+                'Proper newline formatting',
+                'Error handling for all scenarios'
             ]
         }
     });
@@ -749,44 +789,17 @@ app.get('/debug', async (req, res) => {
 app.get('/webhook/tradingview', (req, res) => {
     res.json({
         message: 'AudenFX HTF Alert Endpoint Ready! 🎯',
-        version: '2.1 - Enhanced HTF Support + Parse-Safe',
+        version: '2.2 - Smart JSON Parser + Fixed Formatting',
         method: 'Use POST method to send HTF alerts from TradingView',
         timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
-        features: [
-            '🎖️ Signal Strength Calculation',
-            '📊 Market Context Analysis', 
-            '⚡ Multi-signal Confluence',
-            '🔮 Automated Market Analysis',
-            '🛡️ Parse-Error-Free Delivery',
-            `💬 ${tradingTips.length}+ Trading Quotes`
+        data_handling: [
+            '🧠 Smart JSON Parser (handles malformed data)',
+            '🔄 Auto Field Mapping (Pine Script format)',
+            '🛡️ Error Recovery (fallback to plain text)',
+            '📱 Fixed Formatting (proper newlines)',
+            '🕐 Correct Timezone (WIB)'
         ]
     });
-});
-
-// Emergency test endpoint (ultra-minimal)
-app.post('/test-minimal', async (req, res) => {
-    try {
-        const testMessage = `🧪 Test Alert\n\nServer working\nBot connected\nTime: ${moment().tz('Asia/Jakarta').format('HH:mm DD/MM/YYYY')}\n\nQuotes available: ${tradingTips.length}\n\nTest successful`;
-        
-        const response = await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            chat_id: CHAT_ID,
-            text: testMessage
-        }, { timeout: 10000 });
-        
-        res.json({
-            success: true,
-            message: 'Minimal test sent',
-            quotes_count: tradingTips.length,
-            telegram_response: response.data
-        });
-        
-    } catch (error) {
-        console.error('Minimal test error:', error);
-        res.status(500).json({
-            success: false,
-            error: error.response?.data || error.message
-        });
-    }
 });
 
 // 404 handler
@@ -800,21 +813,19 @@ app.use('*', (req, res) => {
             'GET /debug': 'Debug information', 
             'GET /webhook/tradingview': 'Webhook info',
             'POST /webhook/tradingview': 'Main HTF webhook for alerts',
-            'POST /test': 'Send enhanced test alert',
-            'POST /test-minimal': 'Send minimal test alert'
+            'POST /test': 'Send enhanced test alert'
         },
-        version: '2.1 - HTF Enhanced + Parse-Safe',
-        quotes_available: tradingTips.length,
+        version: '2.2 - Smart Parser + Fixed Formatting',
         timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')
     });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 AudenFX HTF Bot Server v2.1 running on port ${PORT}`);
+    console.log(`🚀 AudenFX HTF Bot Server v2.2 running on port ${PORT}`);
     console.log(`🕐 Server time: ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🎯 Features: HTF ACR Detection, Parse-Safe Messaging`);
+    console.log(`🧠 Features: Smart JSON Parser, Fixed Formatting, Error Recovery`);
     console.log(`💬 Trading quotes loaded: ${tradingTips.length}`);
     
     // Validate credentials on startup
@@ -826,7 +837,7 @@ app.listen(PORT, () => {
         } else {
             console.log(`✅ HTF Alert Bot ready: ${validation.bot_info.first_name}`);
             console.log(`💬 Target chat: ${validation.chat_info.title || validation.chat_info.first_name || 'Private'}`);
-            console.log(`🛡️ Parse-safe messaging enabled - No more Telegram errors!`);
+            console.log(`🧠 Smart parser enabled - handles malformed TradingView data!`);
         }
     }, 3000);
 });
