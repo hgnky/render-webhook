@@ -26,7 +26,7 @@ app.use((req, res, next) => {
     }
 });
 
-// Trading Tips Array (Enhanced)
+// Trading Tips Array (Enhanced) - 100+ quotes
 const tradingTips = [
     "HTF bias menentukan arah, LTF untuk timing entry presisi 🎯",
     "ACR sweep adalah invitation untuk institutional money flow 💰",
@@ -43,112 +43,108 @@ const tradingTips = [
     "FVG mitigation memberikan clue untuk market direction 🔍",
     "ACR+ expansion menandakan momentum yang kuat 🚀",
     "Reversal + Market Structure = powerful combination 🔄",
-    "HTF bias menentukan arah, LTF untuk timing entry presisi 🎯",
-    "ACR sweep adalah invitation untuk institutional money flow 💰", 
-
-  // --- tambahan lucu + sarkas ---
-  "Trading itu gampang… kalau tau arah candle selanjutnya 😂",
-  "SL kena = market bilang kamu terlalu pede 😏",
-  "TP kelewatan = market bilang kamu terlalu rakus 🐷",
-  "Chart sideways itu bukan market istirahat, itu market nge-prank kamu 🃏",
-  "Trader sejati tau rasanya bangun jam 3 pagi cuma buat liat floating merah 😭",
-  "Indikator paling jujur adalah saldo akun 💸",
-  "Overtrading = cara tercepat kenalan sama MC 🪦",
-  "Kalau trading bikin kaya, kenapa banyak trader suka ngutang kopi? ☕",
-  "Entry tanpa plan itu sama kayak nyebur kolam tanpa cek kedalaman 🏊",
-  "Market itu drama queen, suka bikin plot twist 🎭",
-  "Profit kecil konsisten lebih enak daripada sekali jackpot lalu hilang akun 🎲",
-  "Hedging itu kayak pacaran sama dua orang: ribet, deg-degan, tapi seru 🤐",
-  "Leverage gede = cara instan jadi miskin 🚑",
-  "News trading itu judi berizin, siap-siap lempar koin 🪙",
-  "Cut loss cepat bikin sakit sebentar, hold loss bikin trauma seumur hidup 💔",
-  "Market bukan tempat cari kepastian, itu kerjaannya pasanganmu 😏",
-  "Candle doji = market lagi mikir, kamu jangan sok tau 🤓",
-  "Kalau modal kecil, jangan gaya lot gede. Itu namanya suicidal trading 💀",
-  "Candle merah panjang = pasar lagi diet, buang lemak 📉",
-  "Candle hijau panjang = pasar habis gajian, belanja besar 📈",
-  "Floating minus itu bukan nasib, itu pilihan 🙃",
-  "Lot besar bikin kaya lebih cepat, miskin juga lebih cepat 🏎️",
-  "Jangan bilang 'scalping sebentar' kalau ujung-ujungnya seharian depan chart 😆",
-  "Trading plan tanpa disiplin = dekorasi PDF 💻",
-  "Kalau chart bikin pusing, itu tandanya kamu butuh tidur, bukan entry 🛌",
-  "MC itu bukan Mister Candle, tapi Mister Cancel mimpi 💀",
-  "Trader pemula lihat signal → langsung entry. Trader pro lihat signal → masih nunggu 🙄",
-  "Akun demo selalu hijau, akun real selalu drama 🎬",
-  "Kalau nggak sabar, lebih baik main catur daripada trading ⏳",
-  "Market itu bukan mantan, jangan coba-coba balikan (revenge trade) 😅",
-  "Indikator 10 layer nggak bikin kaya, cuma bikin chart kayak pelangi 🌈",
-  "SL kecil = sakit sedikit. SL gede = sakit lama 😵",
-  "Kalau entry cuma karena bosan, MC sudah menunggu di ujung jalan 🛣️",
-  "Trader pro bilang: 'less is more', pemula bilang: 'klik lagi aja' 🤦",
-  "Kalau trading sambil emosi, siap-siap bikin broker makin kaya 💰",
-  "Buy high, sell low = hobi favorit trader pemula 🤡",
-  "Market selalu benar. Kamu? cuma numpang lewat 😏",
-  "Candle pattern bagus di textbook, tapi market lebih suka freestyle 🕺",
-  "Chart keliatan gampang di screenshot, susah di live trade 📸",
-  "Risk reward 1:3 cuma keren kalau disiplin, kalau nggak ya 3:0 😬",
-  "Trader sukses punya 2 skill: entry tepat & close tepat. Sisanya drama 🪄",
-  "Kalau modal pas-pasan, fokus survive dulu, jangan gaya kaya hedge fund 😎",
-  "Floating profit jangan di-SS dulu, bisa jadi cerita horror nanti 👻",
-  "Semua orang pinter baca chart ke belakang, yang mahal itu baca ke depan 🔮",
-  "Market open = semangat. Market close = nyesel. Cycle repeat ♻️",
-  "Kalau strategi kamu ribet, itu bukan canggih, tapi nyusahin 🤯",
-  "Cut loss itu bukan lemah, itu tanda masih punya otak 🧠",
-  "Kalau entry cuma ikut temen, siap-siap MC bareng 👫",
-  "Scalping = adrenaline junkie trading version ⚡",
-  "Kalau market lagi nge-prank, tutup laptop → tetap selamat 😌",
-  "Satu setup A+ lebih berharga dari 10 setup asal-asalan 🎯",
-  "Kalau trading sambil makan mie instan, jangan heran kalau saldo ikutan instan 🍜",
-  "Lot kecil = tidur nyenyak. Lot besar = mimpi buruk 🌙",
-  "Overconfidence bikin akun hancur lebih cepat daripada crash crypto 💥",
-  "Sinyal gratis = hiburan. Money management = kenyataan 📊",
-  "Kalau modal kecil jangan mimpi jadi Warren Buffet dalam seminggu 🐢",
-  "Market sideways = latihan kesabaran kelas internasional 🧘",
-  "Setiap candle punya cerita, tapi nggak semua cerita happy ending 📖",
-  "Kalau profit langsung tarik, jangan nunggu broker tiba-tiba drama 🚪",
-  "MC bukan akhir dunia, tapi bisa jadi akhir hubungan 💔",
-  "Kalau trading buat gaya, siap-siap jadi bahan lelucon grup WA 🤣",
-  "Disiplin itu nggak bisa dibeli, tapi bisa nyelametin akun 💎",
-  "Kalau strategi sering ganti, yang diganti sebenernya mental kamu 🌀",
-  "Market itu bos. Jangan coba jadi hero, cukup jadi follower pintar 🏃",
-  "Semua orang mau profit besar, jarang ada yang mau sabar lama ⏱️",
-  "Kalau equity drop, jangan drop juga mentalnya 🙌",
-  "Trader pemula suka bilang: 'ah ini pasti balik arah'… market: 'LOL no' 😂",
-  "Beli dip? Dip mana? Chart selalu punya dip baru 🕳️",
-  "Kalau sinyal banyak, pilih satu. Kalau ambil semua, siap-siap chaos 🤯",
-  "SL dihapus = MC menunggu di ujung pintu 🚪",
-  "Kalau chart bikin baper, ingat: candle cuma pixel, bukan hatimu ❤️",
-  "Candle bullish engulﬁng bukan berarti rejeki engulﬁng juga 😏",
-  "Belajar trading itu kayak diet, teori gampang, prakteknya nyiksa 🍕",
-  "Kalau deposit sering, itu bukan investasi, itu top up game 🎮",
-  "Trader pro tau kapan nggak entry, pemula tau kapan klik buy/sell 🖱️",
-  "Kalau lot over, jangan salahin broker. Salahin ego sendiri 😬",
-  "Trading itu simple, manusia yang bikin ribet 👀",
-  "Semua setup bagus… sampai kena SL 🤡",
-  "Market itu kasino elegan, kamu cuma tamu VIP wannabe 🃏",
-  "Kalau floating minus bikin sakit, jangan trading lot jumbo lagi 🛑",
-  "Plan > feeling. Kalau nggak, hasilnya random kayak cuaca 🌦️",
-  "Kalau modal pas-pasan, stop gaya full margin. Broker senyum liat kamu 😈",
-  "Chart itu netral, cuma trader yang kasih drama 🕶️",
-  "Kalau kamu sering bilang 'last entry', berarti bakal ada entry lagi 🤔",
-  "Trader newbie: fokus cari entry. Trader pro: fokus cari exit 🚪",
-  "Kalau udah kena MC, jangan bilang 'ini ujian'. Itu kesalahan 💀",
-  "Market itu bukan pacar, jangan harap dia setia sama analisismu 😅",
-  "Kalau chart bikin frustasi, inget: tombol log out gratis 🔌",
-  "Profit kecil hari ini lebih baik daripada MC besar besok 📆",
-  "Kalau trading sambil doa 'semoga profit', artinya strategi kamu nggak yakin 🙏",
-  "Market kasih sinyal, kamu kasih drama. Fair enough 🤝",
-  "Kalau sering entry random, akun kamu bakal random hilang 🌀",
-  "Jangan percaya influencer trading… mereka kaya dari follower, bukan market 😏",
-  "Kalau SL kecil bikin kapok, berarti kamu belum tau rasanya margin call 😬",
-  "Trading itu marathon. Lari sprint = langsung ngos-ngosan akun 💨",
-  "Kalau sering overtrade, broker bakal undang kamu gala dinner 🎉",
-  "Candle trap itu kejutan, bukan hadiah 🎁",
-  "Market bisa lebih lama irrational daripada kamu bisa tahan floating 😵",
-  "Jangan kejar market, biar market kejar setupmu 🏹",
-  "Trader sejati tau bahwa hari tanpa entry juga produktif 📴",
-  "Kalau profit langsung belanja, nanti market belanja balik modalmu 🛍️",
-  "MC = Market Charity. Kamu donasi ke broker tiap minggu 🤲"
+    "Trading itu gampang… kalau tau arah candle selanjutnya 😂",
+    "SL kena = market bilang kamu terlalu pede 😏",
+    "TP kelewatan = market bilang kamu terlalu rakus 🐷",
+    "Chart sideways itu bukan market istirahat, itu market nge-prank kamu 🃏",
+    "Trader sejati tau rasanya bangun jam 3 pagi cuma buat liat floating merah 😭",
+    "Indikator paling jujur adalah saldo akun 💸",
+    "Overtrading = cara tercepat kenalan sama MC 🪦",
+    "Kalau trading bikin kaya, kenapa banyak trader suka ngutang kopi? ☕",
+    "Entry tanpa plan itu sama kayak nyebur kolam tanpa cek kedalaman 🏊",
+    "Market itu drama queen, suka bikin plot twist 🎭",
+    "Profit kecil konsisten lebih enak daripada sekali jackpot lalu hilang akun 🎲",
+    "Hedging itu kayak pacaran sama dua orang: ribet, deg-degan, tapi seru 🤐",
+    "Leverage gede = cara instan jadi miskin 🚑",
+    "News trading itu judi berizin, siap-siap lempar koin 🪙",
+    "Cut loss cepat bikin sakit sebentar, hold loss bikin trauma seumur hidup 💔",
+    "Market bukan tempat cari kepastian, itu kerjaannya pasanganmu 😏",
+    "Candle doji = market lagi mikir, kamu jangan sok tau 🤓",
+    "Kalau modal kecil, jangan gaya lot gede. Itu namanya suicidal trading 💀",
+    "Candle merah panjang = pasar lagi diet, buang lemak 📉",
+    "Candle hijau panjang = pasar habis gajian, belanja besar 📈",
+    "Floating minus itu bukan nasib, itu pilihan 🙃",
+    "Lot besar bikin kaya lebih cepat, miskin juga lebih cepat 🏎️",
+    "Jangan bilang scalping sebentar kalau ujung-ujungnya seharian depan chart 😆",
+    "Trading plan tanpa disiplin = dekorasi PDF 💻",
+    "Kalau chart bikin pusing, itu tandanya kamu butuh tidur, bukan entry 🛌",
+    "MC itu bukan Mister Candle, tapi Mister Cancel mimpi 💀",
+    "Trader pemula lihat signal langsung entry. Trader pro lihat signal masih nunggu 🙄",
+    "Akun demo selalu hijau, akun real selalu drama 🎬",
+    "Kalau nggak sabar, lebih baik main catur daripada trading ⏳",
+    "Market itu bukan mantan, jangan coba-coba balikan revenge trade 😅",
+    "Indikator 10 layer nggak bikin kaya, cuma bikin chart kayak pelangi 🌈",
+    "SL kecil = sakit sedikit. SL gede = sakit lama 😵",
+    "Kalau entry cuma karena bosan, MC sudah menunggu di ujung jalan 🛣️",
+    "Trader pro bilang less is more, pemula bilang klik lagi aja 🤦",
+    "Kalau trading sambil emosi, siap-siap bikin broker makin kaya 💰",
+    "Buy high, sell low = hobi favorit trader pemula 🤡",
+    "Market selalu benar. Kamu? cuma numpang lewat 😏",
+    "Candle pattern bagus di textbook, tapi market lebih suka freestyle 🕺",
+    "Chart keliatan gampang di screenshot, susah di live trade 📸",
+    "Risk reward 1:3 cuma keren kalau disiplin, kalau nggak ya 3:0 😬",
+    "Trader sukses punya 2 skill: entry tepat & close tepat. Sisanya drama 🪄",
+    "Kalau modal pas-pasan, fokus survive dulu, jangan gaya kaya hedge fund 😎",
+    "Floating profit jangan di-SS dulu, bisa jadi cerita horror nanti 👻",
+    "Semua orang pinter baca chart ke belakang, yang mahal itu baca ke depan 🔮",
+    "Market open = semangat. Market close = nyesel. Cycle repeat ♻️",
+    "Kalau strategi kamu ribet, itu bukan canggih, tapi nyusahin 🤯",
+    "Cut loss itu bukan lemah, itu tanda masih punya otak 🧠",
+    "Kalau entry cuma ikut temen, siap-siap MC bareng 👫",
+    "Scalping = adrenaline junkie trading version ⚡",
+    "Kalau market lagi nge-prank, tutup laptop tetap selamat 😌",
+    "Satu setup A+ lebih berharga dari 10 setup asal-asalan 🎯",
+    "Kalau trading sambil makan mie instan, jangan heran kalau saldo ikutan instan 🍜",
+    "Lot kecil = tidur nyenyak. Lot besar = mimpi buruk 🌙",
+    "Overconfidence bikin akun hancur lebih cepat daripada crash crypto 💥",
+    "Sinyal gratis = hiburan. Money management = kenyataan 📊",
+    "Kalau modal kecil jangan mimpi jadi Warren Buffet dalam seminggu 🐢",
+    "Market sideways = latihan kesabaran kelas internasional 🧘",
+    "Setiap candle punya cerita, tapi nggak semua cerita happy ending 📖",
+    "Kalau profit langsung tarik, jangan nunggu broker tiba-tiba drama 🚪",
+    "MC bukan akhir dunia, tapi bisa jadi akhir hubungan 💔",
+    "Kalau trading buat gaya, siap-siap jadi bahan lelucon grup WA 🤣",
+    "Disiplin itu nggak bisa dibeli, tapi bisa nyelametin akun 💎",
+    "Kalau strategi sering ganti, yang diganti sebenernya mental kamu 🌀",
+    "Market itu bos. Jangan coba jadi hero, cukup jadi follower pintar 🏃",
+    "Semua orang mau profit besar, jarang ada yang mau sabar lama ⏱️",
+    "Kalau equity drop, jangan drop juga mentalnya 🙌",
+    "Trader pemula suka bilang ah ini pasti balik arah market LOL no 😂",
+    "Beli dip? Dip mana? Chart selalu punya dip baru 🕳️",
+    "Kalau sinyal banyak, pilih satu. Kalau ambil semua, siap-siap chaos 🤯",
+    "SL dihapus = MC menunggu di ujung pintu 🚪",
+    "Kalau chart bikin baper, ingat: candle cuma pixel, bukan hatimu ❤️",
+    "Candle bullish engulfing bukan berarti rejeki engulfing juga 😏",
+    "Belajar trading itu kayak diet, teori gampang, prakteknya nyiksa 🍕",
+    "Kalau deposit sering, itu bukan investasi, itu top up game 🎮",
+    "Trader pro tau kapan nggak entry, pemula tau kapan klik buy/sell 🖱️",
+    "Kalau lot over, jangan salahin broker. Salahin ego sendiri 😬",
+    "Trading itu simple, manusia yang bikin ribet 👀",
+    "Semua setup bagus sampai kena SL 🤡",
+    "Market itu kasino elegan, kamu cuma tamu VIP wannabe 🃏",
+    "Kalau floating minus bikin sakit, jangan trading lot jumbo lagi 🛑",
+    "Plan > feeling. Kalau nggak, hasilnya random kayak cuaca 🌦️",
+    "Kalau modal pas-pasan, stop gaya full margin. Broker senyum liat kamu 😈",
+    "Chart itu netral, cuma trader yang kasih drama 🕶️",
+    "Kalau kamu sering bilang last entry, berarti bakal ada entry lagi 🤔",
+    "Trader newbie: fokus cari entry. Trader pro: fokus cari exit 🚪",
+    "Kalau udah kena MC, jangan bilang ini ujian. Itu kesalahan 💀",
+    "Market itu bukan pacar, jangan harap dia setia sama analisismu 😅",
+    "Kalau chart bikin frustasi, inget: tombol log out gratis 🔌",
+    "Profit kecil hari ini lebih baik daripada MC besar besok 📆",
+    "Kalau trading sambil doa semoga profit, artinya strategi kamu nggak yakin 🙏",
+    "Market kasih sinyal, kamu kasih drama. Fair enough 🤝",
+    "Kalau sering entry random, akun kamu bakal random hilang 🌀",
+    "Jangan percaya influencer trading mereka kaya dari follower, bukan market 😏",
+    "Kalau SL kecil bikin kapok, berarti kamu belum tau rasanya margin call 😬",
+    "Trading itu marathon. Lari sprint = langsung ngos-ngosan akun 💨",
+    "Kalau sering overtrade, broker bakal undang kamu gala dinner 🎉",
+    "Candle trap itu kejutan, bukan hadiah 🎁",
+    "Market bisa lebih lama irrational daripada kamu bisa tahan floating 😵",
+    "Jangan kejar market, biar market kejar setupmu 🏹",
+    "Trader sejati tau bahwa hari tanpa entry juga produktif 📴",
+    "Kalau profit langsung belanja, nanti market belanja balik modalmu 🛍️",
+    "MC = Market Charity. Kamu donasi ke broker tiap minggu 🤲"
 ];
 
 // Market Analysis Messages
@@ -218,22 +214,12 @@ function getMarketSession() {
     }
 }
 
-function formatVolume(volume) {
-    const vol = parseFloat(volume) || 0;
-    if (vol >= 1000000) {
-        return `${(vol / 1000000).toFixed(1)}M`;
-    } else if (vol >= 1000) {
-        return `${(vol / 1000).toFixed(1)}K`;
-    }
-    return vol.toString();
-}
-
 function calculateSignalStrength(data) {
     let strength = 0;
     let factors = [];
     
     // ACR Direction (base)
-    if (data.acr_direction !== 'NEUTRAL') {
+    if (data.acr_direction && data.acr_direction !== 'NEUTRAL') {
         strength += 30;
         factors.push('ACR Pattern');
     }
@@ -261,7 +247,7 @@ function calculateSignalStrength(data) {
     }
     
     // Price momentum
-    const priceChange = parseFloat(data.htf_change_pct) || 0;
+    const priceChange = parseFloat(data.price_change_1h) || 0;
     if (Math.abs(priceChange) > 0.5) {
         strength += 10;
         factors.push('HTF Momentum');
@@ -280,7 +266,17 @@ function getSignalEmoji(strength) {
     return '⭐';
 }
 
-// Enhanced message formatter with Markdown escape
+// Helper function to extract basic data
+function extractBasicData(data) {
+    return {
+        symbol: data.symbol || data.ticker || 'UNKNOWN',
+        direction: data.acr_direction || data.direction || 'NEUTRAL',
+        price: data.current_price || data.price || '0.00000',
+        timeframe: data.htf || data.timeframe || 'Unknown'
+    };
+}
+
+// SAFE Plain Text Message Formatter (NO MARKDOWN/HTML)
 function formatMessage(data) {
     try {
         const {
@@ -292,146 +288,107 @@ function formatMessage(data) {
             sweep_level = '0.00000',
             cisd_status = 'NEUTRAL',
             acrx_signals = '',
-            alert_time_wib = 'Unknown',
-            market_session = '🌙 Unknown Session',
+            alert_time_wib = moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
+            market_session = getMarketSession(),
             price_change_1h = '0',
-            random_tip = 'Always manage your risk!',
+            random_tip = getRandomTip(),
             volume = '0'
         } = data;
 
-        // Escape function untuk Markdown
-        const escapeMarkdown = (text) => {
-            if (!text || typeof text !== 'string') return text;
-            return text.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
-        };
-
-        // Clean data (remove special chars yang bermasalah)
-        const cleanSymbol = escapeMarkdown(symbol.toString());
+        // Clean all data (remove special characters that might cause issues)
+        const cleanSymbol = symbol.toString().replace(/[^\w]/g, '');
         const cleanPrice = current_price.toString().replace(/[^0-9.]/g, '');
         const cleanSweep = sweep_level.toString().replace(/[^0-9.]/g, '');
-        const cleanCISD = escapeMarkdown(cisd_status.toString());
-        const cleanACRX = escapeMarkdown(acrx_signals.toString());
-        const cleanTip = escapeMarkdown(random_tip.toString());
+        const cleanCISD = cisd_status.toString();
+        const cleanACRX = acrx_signals.toString();
+        const cleanTip = random_tip.toString().replace(/["""'']/g, '"');
 
-        // Direction styling
+        // Direction styling (emoji only)
         const isbullish = acr_direction === 'BULLISH';
         const isbearish = acr_direction === 'BEARISH';
         const directionEmoji = isbullish ? '🟢' : isbearish ? '🔴' : '⚪';
         const trendArrow = isbullish ? '📈' : isbearish ? '📉' : '➖';
         const setupIcon = isbullish ? '🚀' : isbearish ? '🎯' : '🔄';
         
-        // Price change formatting (safe)
+        // Price change formatting
         const priceChange = parseFloat(price_change_1h) || 0;
         const changeEmoji = priceChange > 0 ? '📈' : priceChange < 0 ? '📉' : '➖';
         const changeSign = priceChange > 0 ? '+' : '';
-        const changePercent = Math.abs(priceChange).toFixed(2);
         
-        // CISD status formatting
+        // CISD emoji
         const cisdEmoji = cisd_status.includes('BULLISH') ? '🟢' : 
                           cisd_status.includes('BEARISH') ? '🔴' : '⚪';
 
-        // Volume formatting (safe)
+        // Volume formatting
         let volText = '';
         if (volume && volume !== '0') {
             const vol = parseFloat(volume);
             if (!isNaN(vol) && vol > 0) {
                 if (vol > 1000000) {
-                    volText = `📊 *Volume:* ${(vol/1000000).toFixed(1)}M\n`;
+                    volText = `📊 Volume: ${(vol/1000000).toFixed(1)}M\n`;
                 } else if (vol > 1000) {
-                    volText = `📊 *Volume:* ${(vol/1000).toFixed(1)}K\n`;
+                    volText = `📊 Volume: ${(vol/1000).toFixed(1)}K\n`;
                 } else {
-                    volText = `📊 *Volume:* ${vol.toFixed(0)}\n`;
+                    volText = `📊 Volume: ${vol.toFixed(0)}\n`;
                 }
             }
         }
 
-        // Build message dengan safe formatting
-        let message = `🚨 *AUDENFX SIGNAL ALERT* 🚨\n\n`;
+        // Signal strength
+        const signalData = calculateSignalStrength(data);
+        const strengthEmoji = getSignalEmoji(signalData.strength);
+
+        // Build PLAIN TEXT message (no markdown formatting)
+        let message = `🚨 AUDENFX SIGNAL ALERT 🚨\n\n`;
         
-        // Header Info (safe)
-        message += `${setupIcon} *${cleanSymbol}* \\| ${formatTimeframe(timeframe)} → ${formatTimeframe(htf)}\n`;
-        message += `${directionEmoji} *${acr_direction} ACR* ${trendArrow}\n`;
+        // Header Info
+        message += `${setupIcon} ${cleanSymbol} | ${formatTimeframe(timeframe)} → ${formatTimeframe(htf)}\n`;
+        message += `${directionEmoji} ${acr_direction} ACR ${trendArrow}\n`;
+        message += `${strengthEmoji} Signal Strength: ${signalData.strength}%\n`;
         message += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
         
-        // Trading Info (safe)
-        message += `💰 *Current Price:* \`${cleanPrice}\`\n`;
-        message += `🎯 *Sweep Level:* \`${cleanSweep}\`\n`;
-        message += `${changeEmoji} *1H Change:* ${changeSign}${changePercent}%\n`;
+        // Trading Info
+        message += `💰 Current Price: ${cleanPrice}\n`;
+        message += `🎯 Sweep Level: ${cleanSweep}\n`;
+        message += `${changeEmoji} 1H Change: ${changeSign}${Math.abs(priceChange).toFixed(2)}%\n`;
         
-        // Volume (if available)
+        // Volume
         if (volText) {
             message += volText;
         }
         message += `\n`;
         
-        // Signal Status (safe)
-        message += `${cisdEmoji} *CISD:* ${cleanCISD}\n`;
+        // Signal Status
+        message += `${cisdEmoji} CISD: ${cleanCISD}\n`;
         if (cleanACRX && cleanACRX !== '') {
-            message += `⚡ *ACR\\+:* ${cleanACRX}\n`;
+            message += `⚡ ACR+: ${cleanACRX}\n`;
         }
-        message += `\n`;
         
-        // Session & Time Info (safe)
+        // Market Analysis
+        const analysis = getMarketAnalysis(acr_direction, cleanACRX);
+        message += `📊 Analysis: ${analysis}\n\n`;
+        
+        // Session & Time
         message += `${market_session}\n`;
-        message += `🕐 *Alert Time:* ${alert_time_wib}\n\n`;
+        message += `🕐 Alert Time: ${alert_time_wib}\n\n`;
         
-        // Trading Tip (safe)
-        message += `💡 *Kata-Kata Hari Ini King:*\n`;
-        message += `_"${cleanTip}"_\n\n`;
+        // Trading Tip
+        message += `💡 Kata-Kata Hari Ini King:\n`;
+        message += `"${cleanTip}"\n\n`;
         
-        // Footer (safe)
+        // Footer
         message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-        message += `⚠️ *Risk Management is Key*\n`;
-        message += `📊 *Always DYOR • NFA*\n`;
-        message += `🏷️ \`\\#AudenFX \\#${cleanSymbol} \\#${acr_direction}ACR\``;
+        message += `⚠️ Risk Management is Key\n`;
+        message += `📊 Always DYOR • NFA\n`;
+        message += `#AudenFX #${cleanSymbol} #${acr_direction}ACR`;
 
         return message;
         
     } catch (error) {
         console.error('Format message error:', error);
-        // Fallback ke plain text (no markdown)
-        return formatPlainMessage(data);
+        // Ultra-safe fallback
+        return `🚨 AUDENFX ALERT\n\n📊 ${data.symbol || 'Unknown'}\n🎯 ${data.acr_direction || 'Unknown'} ACR\n💰 Price: ${data.current_price || '0'}\n🎯 Sweep: ${data.sweep_level || '0'}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}\n\n⚠️ Always DYOR - NFA`;
     }
-}
-
-// Fallback plain text formatter (no markdown)
-function formatPlainMessage(data) {
-    const {
-        symbol = 'Unknown',
-        current_price = '0.00000',
-        acr_direction = 'NEUTRAL',
-        sweep_level = '0.00000',
-        cisd_status = 'NEUTRAL',
-        acrx_signals = ''
-    } = data;
-
-    const directionEmoji = acr_direction === 'BULLISH' ? '🟢' : 
-                          acr_direction === 'BEARISH' ? '🔴' : '⚪';
-    
-    let message = `🚨 AUDENFX SIGNAL ALERT 🚨\n\n`;
-    message += `${directionEmoji} ${symbol} - ${acr_direction} ACR\n`;
-    message += `💰 Current Price: ${current_price}\n`;
-    message += `🎯 Sweep Level: ${sweep_level}\n`;
-    message += `🔥 CISD: ${cisd_status}\n`;
-    
-    if (acrx_signals && acrx_signals !== '') {
-        message += `⚡ ACR+: ${acrx_signals}\n`;
-    }
-    
-    message += `\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}`;
-    message += `\n${getMarketSession()}`;
-    message += `\n\n⚠️ Risk Management is Key | Always DYOR`;
-    
-    return message;
-}
-// Helper function to extract basic data from complex structure
-function extractBasicData(data) {
-    return {
-        symbol: data.symbol || data.ticker || 'UNKNOWN',
-        direction: data.acr_direction || data.direction || 'NEUTRAL',
-        price: data.current_ltf_price || data.current_price || data.price || '0.00000',
-        timeframe: data.htf_timeframe || data.timeframe || 'Unknown'
-    };
 }
 
 // Enhanced validation function
@@ -477,31 +434,65 @@ async function validateBotCredentials() {
     }
 }
 
-// Enhanced send to Telegram function
-async function sendToTelegram(message, retries = 3) {
+// ULTRA-SAFE Telegram sender (Plain Text Only)
+async function sendToTelegram(message, retries = 2) {
     const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
     
+    // Clean message dari semua karakter yang bermasalah
+    let cleanMessage = message.toString();
+    
+    // Remove semua markdown/html characters yang bisa bikin parsing error
+    cleanMessage = cleanMessage.replace(/[*_`\[\]()~>#+=|{}!\\]/g, '');
+    
+    // Replace multiple spaces dengan single space
+    cleanMessage = cleanMessage.replace(/\s+/g, ' ').trim();
+    
+    // Limit message length (Telegram max 4096 chars)
+    if (cleanMessage.length > 4000) {
+        cleanMessage = cleanMessage.substring(0, 4000) + '...\n\n⚠️ Message truncated';
+    }
+
     for (let i = 0; i < retries; i++) {
         try {
-            console.log(`📤 Sending to Telegram (attempt ${i + 1}/${retries})`);
+            console.log(`📤 Sending PLAIN TEXT to Telegram (attempt ${i + 1}/${retries})`);
             
             const response = await axios.post(url, {
                 chat_id: CHAT_ID,
-                text: message,
-                parse_mode: 'Markdown',
-                disable_web_page_preview: true,
-                disable_notification: false
+                text: cleanMessage,
+                disable_web_page_preview: true
+                // NO parse_mode = plain text only, no formatting
             }, {
-                timeout: 30000,
+                timeout: 20000,
                 headers: { 'Content-Type': 'application/json' }
             });
             
-            console.log('✅ HTF Alert sent successfully');
+            console.log('✅ Plain text message sent successfully');
             return { ok: true, data: response.data };
             
         } catch (error) {
             const errorDetails = error.response?.data || error.message;
             console.error(`❌ Telegram error (attempt ${i + 1}):`, errorDetails);
+            
+            // If still parsing error, send ultra-minimal message
+            if (errorDetails && errorDetails.description && errorDetails.description.includes("parse entities") && i === retries - 1) {
+                console.log('🆘 Sending ultra-minimal message...');
+                
+                try {
+                    const basicData = extractBasicData({ symbol: 'Alert', acr_direction: 'Signal', current_price: 'Active' });
+                    const minimalMessage = `🚨 AudenFX Alert\n\nSymbol: ${basicData.symbol}\nDirection: ${basicData.direction}\nPrice: ${basicData.price}\n\nTime: ${moment().tz('Asia/Jakarta').format('HH:mm DD/MM/YYYY')}`;
+                    
+                    const minimalResponse = await axios.post(url, {
+                        chat_id: CHAT_ID,
+                        text: minimalMessage
+                    }, { timeout: 10000 });
+                    
+                    console.log('✅ Minimal message sent');
+                    return { ok: true, data: minimalResponse.data };
+                    
+                } catch (minimalError) {
+                    console.error('❌ Even minimal message failed:', minimalError.response?.data);
+                }
+            }
             
             if (i === retries - 1) {
                 return { 
@@ -511,8 +502,8 @@ async function sendToTelegram(message, retries = 3) {
                 };
             }
             
-            // Wait before retry (exponential backoff)
-            await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
+            // Wait before retry
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
 }
@@ -525,7 +516,7 @@ app.get('/', async (req, res) => {
     
     res.json({
         status: 'AudenFX HTF Alert Bot',
-        version: '2.0 - Enhanced HTF Support',
+        version: '2.1 - Enhanced HTF Support + Parse-Safe',
         bot_status: validation.valid ? '✅ Ready' : '❌ Configuration Error',
         timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
         features: [
@@ -534,11 +525,13 @@ app.get('/', async (req, res) => {
             '📊 CISD Confirmation Analysis', 
             '🔥 Signal Strength Calculation',
             '📈 Market Context Integration',
-            '🎖️ Multi-timeframe Data Handling'
+            '🎖️ Multi-timeframe Data Handling',
+            '🛡️ Parse-Error-Free Messaging'
         ],
+        quotes_available: tradingTips.length,
         server_info: {
-            uptime: process.uptime(),
-            memory_usage: process.memoryUsage(),
+            uptime: Math.floor(process.uptime()),
+            memory_usage: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
             node_version: process.version
         },
         validation: {
@@ -546,17 +539,11 @@ app.get('/', async (req, res) => {
             error: validation.error || null,
             bot_name: validation.bot_info?.first_name || null,
             chat_type: validation.chat_info?.type || null
-        },
-        supported_data_structure: {
-            alert_type: 'HTF_ACR_SWEEP',
-            timeframes: 'Multi-TF (LTF + HTF)',
-            signals: 'ACR + ACRX + CISD',
-            analysis: 'Signal Strength + Market Context'
         }
     });
 });
 
-// Main webhook endpoint - Enhanced for new data structure
+// Main webhook endpoint - Enhanced & Parse-Safe
 app.post('/webhook/tradingview', async (req, res) => {
     try {
         // Quick validation
@@ -582,8 +569,11 @@ app.post('/webhook/tradingview', async (req, res) => {
                 console.log('✅ Parsed JSON from string');
             } catch (parseError) {
                 console.log('📝 Treating as plain text message');
-                const plainMessage = `🚨 *AudenFX HTF Alert*\n\n${req.body}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}\n${getMarketSession()}`;
-                const result = await sendToTelegram(plainMessage);
+                
+                // Ultra-simple plain text message
+                const simpleMessage = `🚨 AudenFX Alert\n\n${req.body}\n\n⏰ ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}\n${getMarketSession()}\n\n⚠️ Always DYOR`;
+                
+                const result = await sendToTelegram(simpleMessage);
                 
                 return res.status(result.ok ? 200 : 500).json({
                     success: result.ok,
@@ -599,21 +589,40 @@ app.post('/webhook/tradingview', async (req, res) => {
         }
 
         // Log received data structure
+        const basicData = extractBasicData(alertData);
         console.log('📊 HTF Alert data received:', {
-            symbol: alertData.symbol,
-            alert_type: alertData.alert_type,
-            acr_direction: alertData.acr_direction,
-            htf_timeframe: alertData.htf_timeframe,
+            symbol: basicData.symbol,
+            direction: basicData.direction,
+            price: basicData.price,
             signal_strength: calculateSignalStrength(alertData).strength
         });
 
+        // Add server-side enrichments
+        const enrichedData = {
+            symbol: 'UNKNOWN',
+            current_price: '0.00000',
+            timeframe: '15',
+            htf: '1H', 
+            acr_direction: 'NEUTRAL',
+            sweep_level: '0.00000',
+            cisd_status: 'NEUTRAL',
+            acrx_signals: '',
+            price_change_1h: '0',
+            volume: '0',
+            ...alertData,
+            alert_time_wib: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
+            market_session: getMarketSession(),
+            random_tip: getRandomTip()
+        };
+
+        console.log('🔥 Enriched data ready for formatting');
+
         // Format and send message
-        const formattedMessage = formatMessage(alertData);
+        const formattedMessage = formatMessage(enrichedData);
         const result = await sendToTelegram(formattedMessage);
         
         if (result.ok) {
-            const basicData = extractBasicData(alertData);
-            console.log(`✅ HTF Alert sent: ${basicData.symbol} ${basicData.direction} (${basicData.timeframe})`);
+            console.log(`✅ HTF Alert sent: ${basicData.symbol} ${basicData.direction} (Strength: ${calculateSignalStrength(enrichedData).strength}%)`);
             
             res.status(200).json({
                 success: true,
@@ -622,8 +631,8 @@ app.post('/webhook/tradingview', async (req, res) => {
                     symbol: basicData.symbol,
                     direction: basicData.direction,
                     alert_type: alertData.alert_type || 'HTF_ACR',
-                    signal_strength: calculateSignalStrength(alertData).strength,
-                    timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')
+                    signal_strength: calculateSignalStrength(enrichedData).strength,
+                    timestamp: enrichedData.alert_time_wib
                 }
             });
         } else {
@@ -659,46 +668,19 @@ app.post('/test', async (req, res) => {
             });
         }
 
-        // Create comprehensive test alert matching new structure
+        // Create comprehensive test alert
         const testData = {
             symbol: 'EURUSD',
             alert_type: 'HTF_ACR_SWEEP',
-            current_ltf_price: '1.08425',
-            ltf_timeframe: '15',
-            htf_timeframe: '240',
-            htf_bar_time: Date.now(),
+            current_price: '1.08425',
+            timeframe: '15',
+            htf: '240',
             acr_direction: 'BULLISH',
             sweep_level: '1.08550',
             cisd_status: 'BULLISH CISD',
-            cisd_direction: 'BUY SETUP',
             acrx_signals: 'CISD / EXP',
-            htf_change_pct: '0.45',
-            htf_volume: '1250000',
-            htf_ohlc: {
-                open: '1.08380',
-                high: '1.08470',
-                low: '1.08350',
-                close: '1.08425'
-            },
-            ltf_ohlc: {
-                open: '1.08420',
-                high: '1.08435',
-                low: '1.08415',
-                close: '1.08425'
-            },
-            pattern_details: {
-                c1_high: '1.08380',
-                c1_low: '1.08320',
-                c2_high: '1.08470',
-                c2_low: '1.08350',
-                is_high_sweep: false,
-                pattern_id: 1
-            },
-            market_context: {
-                current_atr: '0.00085',
-                rsi: '65.25',
-                timestamp: Date.now()
-            }
+            price_change_1h: '0.45',
+            volume: '1250000'
         };
 
         const testMessage = formatMessage(testData);
@@ -708,11 +690,14 @@ app.post('/test', async (req, res) => {
             success: result.ok,
             message: result.ok ? 'Enhanced HTF test alert sent successfully!' : 'Failed to send test alert',
             error: result.ok ? null : result.error,
-            test_data_structure: 'HTF ACR with full market context',
-            signal_strength: calculateSignalStrength(testData).strength,
+            test_data: {
+                signal_strength: calculateSignalStrength(testData).strength,
+                quotes_available: tradingTips.length,
+                parse_safe: true
+            },
             bot_info: {
-                name: validation.bot_info.first_name,
-                username: validation.bot_info.username
+                name: validation.bot_info?.first_name,
+                username: validation.bot_info?.username
             }
         });
 
@@ -725,13 +710,13 @@ app.post('/test', async (req, res) => {
     }
 });
 
-// Debug endpoint - Enhanced
+// Debug endpoint
 app.get('/debug', async (req, res) => {
     const validation = await validateBotCredentials();
     
     res.json({
         debug_info: {
-            version: '2.0 - HTF Enhanced',
+            version: '2.1 - HTF Enhanced + Parse-Safe',
             timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
             environment: {
                 BOT_TOKEN_present: !!BOT_TOKEN,
@@ -742,44 +727,62 @@ app.get('/debug', async (req, res) => {
             validation_result: validation,
             market_session: getMarketSession(),
             random_tip: getRandomTip(),
-            supported_features: [
+            quotes_count: tradingTips.length,
+            features_enabled: [
                 'HTF ACR Detection',
                 'ACRX Signal Processing', 
                 'CISD Confirmation',
                 'Signal Strength Analysis',
-                'Multi-timeframe Context'
+                'Multi-timeframe Context',
+                'Parse-Error-Free Messaging',
+                `${tradingTips.length}+ Trading Quotes`
             ]
-        },
-        sample_alert_structure: {
-            alert_type: 'HTF_ACR_SWEEP',
-            symbol: 'EURUSD',
-            acr_direction: 'BULLISH',
-            htf_timeframe: '240',
-            ltf_timeframe: '15',
-            signal_components: ['ACR', 'CISD', 'ACRX', 'Market Context']
         }
     });
 });
 
-// Webhook GET (info) - Updated
+// Webhook GET (info)
 app.get('/webhook/tradingview', (req, res) => {
     res.json({
         message: 'AudenFX HTF Alert Endpoint Ready! 🎯',
-        version: '2.0 - Enhanced HTF Support',
+        version: '2.1 - Enhanced HTF Support + Parse-Safe',
         method: 'Use POST method to send HTF alerts from TradingView',
         timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB'),
-        supported_alert_types: [
-            'HTF_ACR_SWEEP - Main signal type',
-            'ACRX_EXPANSION - Momentum signals', 
-            'CISD_CONFIRMATION - Structure confirmations'
-        ],
-        data_processing: [
+        features: [
             '🎖️ Signal Strength Calculation',
             '📊 Market Context Analysis', 
             '⚡ Multi-signal Confluence',
-            '🔮 Automated Market Analysis'
+            '🔮 Automated Market Analysis',
+            '🛡️ Parse-Error-Free Delivery',
+            `💬 ${tradingTips.length}+ Trading Quotes`
         ]
     });
+});
+
+// Emergency test endpoint (ultra-minimal)
+app.post('/test-minimal', async (req, res) => {
+    try {
+        const testMessage = `🧪 Test Alert\n\nServer working\nBot connected\nTime: ${moment().tz('Asia/Jakarta').format('HH:mm DD/MM/YYYY')}\n\nQuotes available: ${tradingTips.length}\n\nTest successful`;
+        
+        const response = await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            chat_id: CHAT_ID,
+            text: testMessage
+        }, { timeout: 10000 });
+        
+        res.json({
+            success: true,
+            message: 'Minimal test sent',
+            quotes_count: tradingTips.length,
+            telegram_response: response.data
+        });
+        
+    } catch (error) {
+        console.error('Minimal test error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.response?.data || error.message
+        });
+    }
 });
 
 // 404 handler
@@ -793,19 +796,22 @@ app.use('*', (req, res) => {
             'GET /debug': 'Debug information', 
             'GET /webhook/tradingview': 'Webhook info',
             'POST /webhook/tradingview': 'Main HTF webhook for alerts',
-            'POST /test': 'Send enhanced test alert'
+            'POST /test': 'Send enhanced test alert',
+            'POST /test-minimal': 'Send minimal test alert'
         },
-        version: '2.0 - HTF Enhanced',
+        version: '2.1 - HTF Enhanced + Parse-Safe',
+        quotes_available: tradingTips.length,
         timestamp: moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')
     });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`🚀 AudenFX HTF Bot Server v2.0 running on port ${PORT}`);
+    console.log(`🚀 AudenFX HTF Bot Server v2.1 running on port ${PORT}`);
     console.log(`🕐 Server time: ${moment().tz('Asia/Jakarta').format('DD/MM/YYYY HH:mm:ss WIB')}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🎯 Features: HTF ACR Detection, ACRX Signals, Signal Strength Analysis`);
+    console.log(`🎯 Features: HTF ACR Detection, Parse-Safe Messaging`);
+    console.log(`💬 Trading quotes loaded: ${tradingTips.length}`);
     
     // Validate credentials on startup
     setTimeout(async () => {
@@ -816,6 +822,7 @@ app.listen(PORT, () => {
         } else {
             console.log(`✅ HTF Alert Bot ready: ${validation.bot_info.first_name}`);
             console.log(`💬 Target chat: ${validation.chat_info.title || validation.chat_info.first_name || 'Private'}`);
+            console.log(`🛡️ Parse-safe messaging enabled - No more Telegram errors!`);
         }
     }, 3000);
 });
