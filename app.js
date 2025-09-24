@@ -4,7 +4,7 @@ const moment = require('moment-timezone');
 
 // Keep-alive configuration
 const KEEP_ALIVE_CONFIG = {
-    self_ping_interval: 25 * 60 * 1000, // 25 menit
+    self_ping_interval: 5 * 60 * 1000, // 25 menit
     health_check_interval: 5 * 60 * 1000, // 5 menit
     telegram_test_interval: 30 * 60 * 1000, // 30 menit
     max_retries: 5,
